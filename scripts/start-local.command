@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 
 PORT=4173
 URL="http://localhost:${PORT}"
