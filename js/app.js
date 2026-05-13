@@ -515,7 +515,7 @@ function openCurrentDeckInBuilder() {
       rawDeck,
     );
     RecallLoopStore.saveBuilderDraft(builderDraft);
-    window.location.href = "./builder.html";
+    window.location.href = "./pages/builder.html";
   } catch (error) {
     state.pastePanelOpen = true;
     syncSetupState();
