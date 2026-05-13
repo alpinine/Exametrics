@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Exametrics AI Set Builder</title>
+    <meta name="theme-color" content="#0f7b6c" />
+    <meta
+      name="description"
+      content="Use AI to generate study sets with custom distractors, concept headers, and a clean deck format for Exametrics."
+    />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="shared.js" defer></script>
+    <script src="ai-builder.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero">
+        <p class="eyebrow">AI-guided import</p>
+        <h1>AI Set Builder</h1>
+        <p class="hero-copy">
+          Use any AI tool you like, ask for a clean Exametrics deck format, then paste or
+          upload the result here and save it straight into Exametrics.
+        </p>
+      </header>
+
+      <main class="main-panel">
+        <section class="builder-page">
+          <div class="library-toolbar">
+            <div class="section-heading">
+              <p class="section-kicker">Bring in an AI deck</p>
+              <h2>Paste it, upload it, save it, study it</h2>
+            </div>
+
+            <div class="library-toolbar-actions">
+              <a href="index.html" class="button button-primary button-link">Back to Study Page</a>
+              <a href="builder.html" class="button button-ghost button-link">Open Set Builder</a>
+              <a href="library.html" class="button button-ghost button-link">Open Set Library</a>
+            </div>
+          </div>
+
+          <div class="builder-grid">
+            <section class="editor-panel">
+              <div class="section-heading">
+                <p class="section-kicker">1. Add your deck</p>
+                <h2>Paste AI output or upload a text file</h2>
+              </div>
+
+              <label class="menu-label" for="ai-set-name-input">Set name</label>
+              <input
+                id="ai-set-name-input"
+                class="set-name-input"
+                type="text"
+                maxlength="80"
+                placeholder="Name this set"
+              />
+
+              <div class="menu-actions">
+                <label class="button button-secondary upload-button" for="ai-file-input">
+                  Upload AI Deck
+                </label>
+                <button id="ai-sample-button" class="button button-ghost" type="button">
+                  Use Sample Deck
+                </button>
+              </div>
+              <input id="ai-file-input" type="file" accept=".txt,.md,text/plain" hidden />
+
+              <label class="sr-only" for="ai-deck-input">AI deck text</label>
+              <textarea
+                id="ai-deck-input"
+                spellcheck="false"
+                placeholder="Paste the AI response here. You can also tweak the concept lines, prompt types, or distractors before saving."
+              ></textarea>
+
+              <div class="menu-actions">
+                <button id="ai-save-set-button" class="button button-secondary" type="button">
+                  Save Set
+                </button>
+                <button id="ai-study-set-button" class="button button-primary" type="button">
+                  Save and Study
+                </button>
+                <button id="ai-builder-convert-button" class="button button-ghost" type="button">
+                  Edit in Builder
+                </button>
+                <button id="ai-open-set-button" class="button button-ghost" type="button">
+                  Save and Open
+                </button>
+              </div>
+
+              <p id="ai-message" class="setup-message" aria-live="polite"></p>
+            </section>
+
+            <aside class="guide-panel">
+              <div class="guide-card">
+                <div class="section-heading">
+                  <p class="section-kicker">2. Quick guide</p>
+                  <h2>What to tell your AI</h2>
+                </div>
+
+                <ol class="guide-steps">
+                  <li>Using the AI of your choice, send it your terms and definitions you want to learn.</li>
+                  <li>Paste the template below and ask for each term or definition to be formatted like that.</li>
+                  <li>Start learning!</li>
+                </ol>
+
+                <p class="guide-copy">
+                  Keep the instructions simple: ask for plausible distractors, one marked
+                  correct answer, and blank lines between cards.
+                </p>
+
+                <p class="guide-copy">
+                  If you want to tweak the core cards after import, just use `Edit in Builder`.
+                  Exametrics will rebuild the deck into builder cards automatically while keeping
+                  the set name, concept lines, prompt direction, term, and definition.
+                </p>
+              </div>
+
+              <div class="guide-card">
+                <div class="section-heading">
+                  <p class="section-kicker">Simple example</p>
+                  <h2>Short template</h2>
+                </div>
+
+                <pre><code>Format these as Exametrics cards.
+Propogate each pairing with plausible and closely related answers and concepts.
+Fill in a concept line for each question to help with context.
+Use either "definition:" or "term:" for each prompt.
+Put each answer choice on its own "- " line.
+Mark the correct answer with "- * ".
+Separate cards with one blank line.
+Make the wrong answers plausible but still incorrect.
+
+concept: Cellular Respiration
+definition: The powerhouse of the cell.
+- * Mitochondria
+- Nucleus
+- Ribosome
+- Golgi apparatus
+
+concept: Plant Processes
+term: Photosynthesis
+- * The process plants use to convert light energy into chemical energy
+- The division of a cell into two daughter cells
+- The movement of water across a membrane
+- The breakdown of glucose for ATP
+
+concept: Scientific Statements
+definition: Water freezes at 0°C.
+- * True
+- False</code></pre>
+              </div>
+            </aside>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
