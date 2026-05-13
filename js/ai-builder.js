@@ -137,7 +137,7 @@ function saveCurrentSet(actionType = "") {
       type: actionType,
       setId: result.set.id,
     });
-    window.location.href = "./index.html";
+    window.location.href = "../index.html";
     return;
   }
 
