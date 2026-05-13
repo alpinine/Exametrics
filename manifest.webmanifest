@@ -1,0 +1,18 @@
+{
+  "name": "Exametrics",
+  "short_name": "Exametrics",
+  "description": "A lightweight study app for working through definition-based multiple choice decks.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fff5d6",
+  "theme_color": "#0f7b6c",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
