@@ -268,7 +268,7 @@ function handleSaveAndRedirect(actionType) {
     type: actionType,
     setId: savedSet.id,
   });
-  window.location.href = "./index.html";
+  window.location.href = "../index.html";
 }
 
 function handleDownloadText() {
