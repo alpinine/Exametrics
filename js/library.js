@@ -150,7 +150,7 @@ function getIconMarkup(iconName) {
 
 function queueSetAction(type, setId) {
   RecallLoopStore.setPendingAction({ type, setId });
-  window.location.href = "./index.html";
+  window.location.href = "../index.html";
 }
 
 function openInBuilder(set) {
