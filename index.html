@@ -10,11 +10,11 @@
       name="description"
       content="A lightweight study app for working through definition-based multiple choice decks."
     />
-    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="stylesheet" href="styles.css" />
-    <script src="shared.js" defer></script>
-    <script src="app.js" defer></script>
+    <link rel="stylesheet" href="css/styles.css" />
+    <script src="js/shared.js" defer></script>
+    <script src="js/app.js" defer></script>
   </head>
   <body>
     <div class="app-shell">
@@ -37,7 +37,7 @@
               </div>
 
               <div class="launcher-grid">
-                <a href="ai-builder.html" class="launch-card launch-card-link">
+                <a href="pages/ai-builder.html" class="launch-card launch-card-link">
                   <span class="launch-card-title">Open AI Set Builder</span>
                   <span class="launch-card-copy">
                     Get the AI prompt, tips, examples, and a dedicated place to paste or upload AI-made decks.
@@ -59,14 +59,14 @@
                 </label>
                 <input id="file-input" type="file" accept=".txt,.md,text/plain" hidden />
 
-                <a href="builder.html" class="launch-card launch-card-link">
+                <a href="pages/builder.html" class="launch-card launch-card-link">
                   <span class="launch-card-title">Open Set Builder</span>
                   <span class="launch-card-copy">
                     Create a set card by card without touching the raw text format.
                   </span>
                 </a>
 
-                <a href="library.html" class="launch-card launch-card-link">
+                <a href="pages/library.html" class="launch-card launch-card-link">
                   <span class="launch-card-title">Open Set Library</span>
                   <span class="launch-card-copy">
                     Browse every saved set on this device and jump back into studying.
