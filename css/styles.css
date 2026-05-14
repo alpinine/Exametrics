@@ -204,8 +204,8 @@ a {
   text-decoration: none;
   color: var(--text);
   font-weight: 800;
-  font-size: 1.1rem;
-  line-height: 1.2;
+  font-size: clamp(1.22rem, 2.2vw, 1.45rem);
+  line-height: 1.15;
   transition:
     transform 140ms ease,
     border-color 140ms ease,
