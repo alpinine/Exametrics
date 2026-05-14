@@ -365,36 +365,27 @@ const RecallLoopStore = (() => {
       .map((line) => line.trim())
       .filter(Boolean);
 
-    const definitionLines = [];
-    const optionLines = [];
-    let optionsStarted = false;
-
-    lines.forEach((line) => {
-      if (line.startsWith("-")) {
-        optionsStarted = true;
-        optionLines.push(line);
-        return;
-      }
-
-      if (optionsStarted) {
-        throw new Error(
-          `Card ${blockIndex + 1} has text after the answer choices. Keep the definition first, then only option lines.`,
-        );
-      }
-
-      definitionLines.push(line);
-    });
+    const answerStartIndex = lines.findIndex(isAnswerBlockStartLine);
+    const definitionLines =
+      answerStartIndex >= 0 ? lines.slice(0, answerStartIndex) : lines;
+    const optionLines =
+      answerStartIndex >= 0 ? lines.slice(answerStartIndex) : [];
 
     if (definitionLines.length === 0) {
       throw new Error(`Card ${blockIndex + 1} is missing its definition text.`);
     }
 
     if (optionLines.length < 2) {
-      throw new Error(`Card ${blockIndex + 1} needs at least 2 answer choices.`);
+      throw new Error(
+        `Card ${blockIndex + 1} needs at least 2 answer choices, and the first answer should start with "- * ".`,
+      );
     }
 
     const { concept, promptLines } = extractConcept(definitionLines, blockIndex);
-    const { promptType, promptText } = extractPromptType(promptLines, blockIndex);
+    const { promptType, promptText, promptLines: normalizedPromptLines } = extractPromptType(
+      promptLines,
+      blockIndex,
+    );
 
     const options = optionLines.map((line) => parseOptionLine(line, blockIndex));
     const correctOptions = options.filter((option) => option.isCorrect);
@@ -409,9 +400,15 @@ const RecallLoopStore = (() => {
       id: `card-${blockIndex + 1}`,
       concept,
       promptType,
+      promptLines: normalizedPromptLines,
+      promptText,
       definition: promptText,
       options,
     };
+  }
+
+  function isAnswerBlockStartLine(line) {
+    return /^-\s*(\*|\[correct\])\s+/i.test(line);
   }
 
   function parseOptionLine(line, blockIndex) {
@@ -473,23 +470,26 @@ const RecallLoopStore = (() => {
     const match = firstLine.match(/^(term|definition)\s*:\s*(.*)$/i);
 
     if (!match) {
+      const promptLines = definitionLines;
       return {
         promptType: "definition",
-        promptText: definitionLines.join(" "),
+        promptLines,
+        promptText: promptLines.join("\n"),
       };
     }
 
     const promptType = match[1].toLowerCase();
     const firstPromptLine = match[2].trim();
-    const promptParts = [firstPromptLine, ...restLines].filter(Boolean);
+    const promptLines = [firstPromptLine, ...restLines].filter(Boolean);
 
-    if (promptParts.length === 0) {
+    if (promptLines.length === 0) {
       throw new Error(`Card ${blockIndex + 1} is missing text after "${promptType}:".`);
     }
 
     return {
       promptType,
-      promptText: promptParts.join(" "),
+      promptLines,
+      promptText: promptLines.join("\n"),
     };
   }
 
@@ -663,12 +663,29 @@ const RecallLoopStore = (() => {
 
   function formatGeneratedCard(card) {
     const conceptLine = card.concept ? `concept: ${card.concept}` : "";
-    const firstLine = `${card.promptType}: ${card.promptText}`;
-    const optionLines = card.options.map((option) =>
+    const promptLines = splitPromptTextLines(card.promptText);
+    const [firstPromptLine = "", ...restPromptLines] = promptLines;
+    const firstLine = `${card.promptType}: ${firstPromptLine}`;
+    const orderedOptions = orderOptionsForStorage(card.options);
+    const optionLines = orderedOptions.map((option) =>
       option.isCorrect ? `- * ${option.text}` : `- ${option.text}`,
     );
 
-    return [conceptLine, firstLine, ...optionLines].filter(Boolean).join("\n");
+    return [conceptLine, firstLine, ...restPromptLines, ...optionLines].filter(Boolean).join("\n");
+  }
+
+  function splitPromptTextLines(promptText) {
+    return String(promptText || "")
+      .split(/\r?\n/g)
+      .map((line) => line.trim())
+      .filter(Boolean);
+  }
+
+  function orderOptionsForStorage(options) {
+    const correctOption = options.find((option) => option.isCorrect);
+    const incorrectOptions = options.filter((option) => !option.isCorrect);
+
+    return correctOption ? [correctOption, ...incorrectOptions] : [...options];
   }
 
   function isBooleanAnswer(value) {
@@ -747,7 +764,12 @@ const RecallLoopStore = (() => {
         typeof entry?.accuracy === "number" && Number.isFinite(entry.accuracy)
           ? Math.max(0, Math.min(1, entry.accuracy))
           : correctAnswers / totalAttempts,
-      sessionMode: entry?.sessionMode === "quickLearn" ? "quickLearn" : "learn",
+      sessionMode:
+        entry?.sessionMode === "quickLearn"
+          ? "quickLearn"
+          : entry?.sessionMode === "comprehensive"
+            ? "comprehensive"
+            : "regular",
       elapsedSeconds: Math.max(0, Math.round(Number(entry?.elapsedSeconds) || 0)),
       timeRemainingSeconds: Math.max(0, Math.round(Number(entry?.timeRemainingSeconds) || 0)),
       completedAt:
@@ -783,6 +805,135 @@ const RecallLoopStore = (() => {
       .replace(/^-+|-+$/g, "") || "exametrics-set";
   }
 
+  function promptForStudyMode(options = {}) {
+    if (typeof document === "undefined" || !document.body) {
+      return Promise.resolve(null);
+    }
+
+    const {
+      title = "Choose a study mode",
+      description = "Pick the pace that fits this study session best.",
+    } = options;
+
+    return new Promise((resolve) => {
+      const overlay = document.createElement("div");
+      overlay.className = "modal-overlay";
+
+      const card = document.createElement("div");
+      card.className = "modal-card mode-picker-card";
+      card.setAttribute("role", "dialog");
+      card.setAttribute("aria-modal", "true");
+      card.setAttribute("aria-labelledby", "study-mode-title");
+
+      const closeButton = document.createElement("button");
+      closeButton.type = "button";
+      closeButton.className = "modal-close-button";
+      closeButton.setAttribute("aria-label", "Close study mode picker");
+      closeButton.textContent = "×";
+      closeButton.addEventListener("click", () => close(null));
+
+      const kicker = document.createElement("p");
+      kicker.className = "section-kicker";
+      kicker.textContent = "Study mode";
+
+      const heading = document.createElement("h2");
+      heading.id = "study-mode-title";
+      heading.textContent = title;
+
+      const copy = document.createElement("p");
+      copy.className = "guide-copy";
+      copy.textContent = description;
+
+      const optionGrid = document.createElement("div");
+      optionGrid.className = "mode-picker-grid";
+
+      const optionConfigs = [
+        {
+          mode: "regular",
+          eyebrow: "Regular",
+          title: "Steady circulation",
+          copy:
+            "Use the classic study flow: missed cards recycle through one shared queue until the set is cleared.",
+          className: "mode-picker-option mode-picker-option-regular",
+        },
+        {
+          mode: "comprehensive",
+          eyebrow: "Comprehensive",
+          title: "Group mastery",
+          copy:
+            "Work through groups of up to 20 cards. Each card stays active until you answer it correctly twice in a row.",
+          className: "mode-picker-option mode-picker-option-comprehensive",
+        },
+        {
+          mode: "quickLearn",
+          eyebrow: "Quick Learn",
+          title: "Timed sprint",
+          copy:
+            "Study a fast randomized subset with the countdown timer and keep moving from question to question.",
+          className: "mode-picker-option mode-picker-option-quick",
+        },
+      ];
+
+      optionConfigs.forEach((config) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = config.className;
+        button.addEventListener("click", () => close(config.mode));
+
+        const optionEyebrow = document.createElement("span");
+        optionEyebrow.className = "mode-picker-option-eyebrow";
+        optionEyebrow.textContent = config.eyebrow;
+
+        const optionTitle = document.createElement("span");
+        optionTitle.className = "mode-picker-option-title";
+        optionTitle.textContent = config.title;
+
+        const optionCopy = document.createElement("span");
+        optionCopy.className = "mode-picker-option-copy";
+        optionCopy.textContent = config.copy;
+
+        button.append(optionEyebrow, optionTitle, optionCopy);
+        optionGrid.appendChild(button);
+      });
+
+      const actions = document.createElement("div");
+      actions.className = "modal-actions";
+
+      const cancelButton = document.createElement("button");
+      cancelButton.type = "button";
+      cancelButton.className = "button button-ghost";
+      cancelButton.textContent = "Cancel";
+      cancelButton.addEventListener("click", () => close(null));
+      actions.appendChild(cancelButton);
+
+      card.append(closeButton, kicker, heading, copy, optionGrid, actions);
+      overlay.appendChild(card);
+      document.body.appendChild(overlay);
+
+      function handleOverlayClick(event) {
+        if (event.target === overlay) {
+          close(null);
+        }
+      }
+
+      function handleKeydown(event) {
+        if (event.key === "Escape") {
+          close(null);
+        }
+      }
+
+      function close(result) {
+        overlay.removeEventListener("click", handleOverlayClick);
+        window.removeEventListener("keydown", handleKeydown);
+        overlay.remove();
+        resolve(result);
+      }
+
+      overlay.addEventListener("click", handleOverlayClick);
+      window.addEventListener("keydown", handleKeydown);
+    });
+  }
+
   return {
     appendAttemptHistory,
     countCards,
@@ -802,6 +953,7 @@ const RecallLoopStore = (() => {
     loadSavedSets,
     normalizeSetName,
     parseDeck,
+    promptForStudyMode,
     saveAutoAdvanceEnabled,
     saveBuilderDraft,
     saveDraft,

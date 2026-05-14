@@ -52,10 +52,7 @@ function renderLibrary() {
     actions.className = "saved-set-actions";
 
     actions.append(
-      createActionButton("Study", "button button-primary", () => queueSetAction("study", set.id)),
-      createActionButton("Quick Learn", "button button-quick", () =>
-        queueSetAction("quickLearn", set.id),
-      ),
+      createActionButton("Study", "button button-quick", () => queueSetAction(set)),
       createIconActionButton("edit", "Edit in Builder", () =>
         openInBuilder(set),
       ),
@@ -131,8 +128,21 @@ function getIconMarkup(iconName) {
   return iconMap[iconName] || "";
 }
 
-function queueSetAction(type, setId) {
-  RecallLoopStore.setPendingAction({ type, setId });
+async function queueSetAction(set) {
+  const selectedMode = await RecallLoopStore.promptForStudyMode({
+    title: `Study "${set.name}"`,
+    description: "Choose how you want to work through this saved set before the session begins.",
+  });
+
+  if (!selectedMode) {
+    return;
+  }
+
+  RecallLoopStore.setPendingAction({
+    type: selectedMode,
+    setId: set.id,
+    returnPath: "./pages/library.html",
+  });
   window.location.href = "../index.html";
 }
 

@@ -54,7 +54,7 @@ function bindEvents() {
   elements.fileInput.addEventListener("change", handleDeckUpload);
   elements.sampleButton.addEventListener("click", loadSampleDeck);
   elements.saveSetButton.addEventListener("click", () => saveCurrentSet());
-  elements.studySetButton.addEventListener("click", () => saveCurrentSet("study"));
+  elements.studySetButton.addEventListener("click", handleSaveAndStudy);
   elements.builderConvertButton.addEventListener("click", openCurrentDeckInBuilder);
   elements.openSetButton.addEventListener("click", saveCurrentSetAndViewLibrary);
 }
@@ -132,17 +132,32 @@ function saveCurrentSet(actionType = "") {
   state.currentSetId = result.set.id;
   RecallLoopStore.saveDraft(content);
 
-  if (actionType) {
-    RecallLoopStore.setPendingAction({
-      type: actionType,
-      setId: result.set.id,
-    });
-    window.location.href = "../index.html";
-    return result.set;
-  }
-
   showMessage(`Saved "${result.set.name}" to your local set library.`);
   return result.set;
+}
+
+async function handleSaveAndStudy() {
+  const savedSet = saveCurrentSet();
+  if (!savedSet) {
+    return;
+  }
+
+  const selectedMode = await RecallLoopStore.promptForStudyMode({
+    title: `Study "${savedSet.name}"`,
+    description: "Choose how you want to work through this set before the session begins.",
+  });
+
+  if (!selectedMode) {
+    showMessage(`Saved "${savedSet.name}". Choose Study again when you're ready.`);
+    return;
+  }
+
+  RecallLoopStore.setPendingAction({
+    type: selectedMode,
+    setId: savedSet.id,
+    returnPath: "./pages/ai-builder.html",
+  });
+  window.location.href = "../index.html";
 }
 
 function openCurrentDeckInBuilder() {
