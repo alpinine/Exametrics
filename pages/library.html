@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#0f7b6c" />
     <meta
       name="description"
-      content="Browse, import, export, and manage the saved study sets on this device."
+      content="Browse the saved study sets on this device and jump back into learning."
     />
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="../manifest.webmanifest" />
@@ -21,7 +21,7 @@
         <p class="eyebrow">Local set manager</p>
         <h1>Exametrics Library</h1>
         <p class="hero-copy">
-          Browse the saved sets in this browser, import or export them, or jump straight back into studying.
+          Browse the saved sets in this browser and jump straight back into studying.
         </p>
       </header>
 
@@ -34,19 +34,11 @@
             </div>
 
             <div class="library-toolbar-actions">
-              <a href="../index.html" class="button button-primary button-link">Back to Study Page</a>
-              <a href="./ai-builder.html" class="button button-ghost button-link">Open AI Set Builder</a>
-              <a href="./builder.html" class="button button-ghost button-link">Open Set Builder</a>
-              <label class="button button-secondary upload-button" for="library-import-input">
-                Import Study Set
-              </label>
+              <a href="../index.html" class="button button-primary button-link">Home</a>
+              <a href="./builder.html" class="button button-ghost button-link">New</a>
+              <a href="./ai-builder.html" class="button button-ghost button-link">AI Set Instructions</a>
+              <a href="./transfer.html" class="button button-ghost button-link">Import/Export</a>
             </div>
-            <input
-              id="library-import-input"
-              type="file"
-              accept=".json,.txt,.md,application/json,text/plain"
-              hidden
-            />
           </div>
 
           <p id="library-message" class="setup-message" aria-live="polite"></p>

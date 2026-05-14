@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Exametrics Import and Export</title>
+    <meta name="theme-color" content="#0f7b6c" />
+    <meta
+      name="description"
+      content="Import study sets into Exametrics or export the saved sets from this device."
+    />
+    <link rel="icon" href="../assets/icon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="stylesheet" href="../css/styles.css" />
+    <script src="../js/shared.js" defer></script>
+    <script src="../js/transfer.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero">
+        <p class="eyebrow">Move sets around</p>
+        <h1>Import/Export</h1>
+        <p class="hero-copy">
+          Bring a study set into this browser or download one out so you can move it to another
+          browser or device.
+        </p>
+      </header>
+
+      <main class="main-panel">
+        <section class="builder-page">
+          <div class="library-toolbar">
+            <div class="section-heading">
+              <h2>Transfer your sets</h2>
+            </div>
+
+            <div class="library-toolbar-actions">
+              <a href="../index.html" class="button button-primary button-link">Home</a>
+              <a href="./library.html" class="button button-ghost button-link">Library</a>
+              <a href="./builder.html" class="button button-ghost button-link">New</a>
+              <a href="./ai-builder.html" class="button button-ghost button-link">AI Set Instructions</a>
+            </div>
+          </div>
+
+          <div class="builder-grid">
+            <section class="editor-panel">
+              <div class="section-heading">
+                <p class="section-kicker">1. Import a study set</p>
+                <h2>Upload a deck file</h2>
+              </div>
+
+              <div class="upload-strip">
+                <label class="button button-secondary upload-button upload-wide-button" for="transfer-import-input">
+                  Import Study Set
+                </label>
+                <p class="upload-strip-note">Accepts exported Exametrics files plus `.txt` and `.md` decks.</p>
+              </div>
+              <input
+                id="transfer-import-input"
+                type="file"
+                accept=".json,.txt,.md,application/json,text/plain"
+                hidden
+              />
+
+              <p class="guide-copy">
+                Imported sets stay local to this browser once they are saved here.
+              </p>
+
+              <p id="transfer-message" class="setup-message" aria-live="polite"></p>
+            </section>
+
+            <aside class="guide-panel">
+              <div class="guide-card">
+                <div class="section-heading">
+                  <p class="section-kicker">2. Export a saved set</p>
+                  <h2>Download a copy</h2>
+                </div>
+
+                <p class="guide-copy">
+                  Pick any saved set below and export it as a text file. Then import that file on
+                  the other browser or device.
+                </p>
+
+                <div id="transfer-list" class="saved-sets-list"></div>
+              </div>
+            </aside>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
