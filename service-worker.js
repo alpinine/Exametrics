@@ -1,4 +1,4 @@
-const CACHE_NAME = "recall-loop-v19";
+const CACHE_NAME = "recall-loop-v21";
 const CORE_ASSETS = [
   "./",
   "./index.html",
