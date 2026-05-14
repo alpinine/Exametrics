@@ -619,6 +619,17 @@ textarea:focus {
   color: var(--text);
 }
 
+
+.button-quick {
+  background: linear-gradient(135deg, #f5c94a, #e9a91f);
+  color: #412700;
+  box-shadow: 0 14px 28px rgba(233, 169, 31, 0.28);
+}
+
+.button-quick:hover {
+  background: linear-gradient(135deg, #ffd86a, #f0b534);
+}
+
 .button-ghost {
   background: transparent;
   color: var(--accent-dark);
@@ -1046,6 +1057,12 @@ summary {
   color: #7b5200;
 }
 
+.pill-quick {
+  background: linear-gradient(135deg, rgba(245, 201, 74, 0.28), rgba(233, 169, 31, 0.22));
+  color: #6a4100;
+  border-color: rgba(233, 169, 31, 0.34);
+}
+
 .concept-label {
   margin: 0 0 8px;
   color: var(--accent-dark);
@@ -1453,4 +1470,17 @@ summary {
   .option-button {
     min-height: 76px;
   }
+}
+
+.app-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 14px 6px 0;
+}
+
+.app-version {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
 }

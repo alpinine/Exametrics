@@ -53,7 +53,7 @@ function renderLibrary() {
 
     actions.append(
       createActionButton("Study", "button button-primary", () => queueSetAction("study", set.id)),
-      createActionButton("Quick Learn", "button button-secondary", () =>
+      createActionButton("Quick Learn", "button button-quick", () =>
         queueSetAction("quickLearn", set.id),
       ),
       createIconActionButton("edit", "Edit in Builder", () =>

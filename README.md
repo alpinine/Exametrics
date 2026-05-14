@@ -1,165 +1,160 @@
 # Exametrics
 
-Exametrics is a lightweight browser study app built for fast exam prep:
+Exametrics is a lightweight browser-based study application for building, importing, organizing, and reviewing multiple-choice study decks. It is designed as a static web app with no required backend, making it easy to run locally or deploy to any static hosting platform.
 
-- The user can build a set in the app, upload a text deck, or paste one from AI.
-- Sets can be saved and reopened locally on the same machine.
-- Sets can be imported and exported as files for manual backup or transfer.
-- Each card shows either a term or a definition with multiple answer choices.
-- Cards can optionally show a concept or section label for extra context during study.
-- A built-in set builder can generate properly formatted deck text from raw term-definition pairs.
-- Correct answers leave the queue.
-- Missed answers come back later with a `Try this one again` badge.
-- Progress is tracked with a live progress bar until every card is mastered.
-- Auto advance can be turned on or off during study.
+## Overview
 
-## Local-only behavior
+The app focuses on fast exam preparation workflows:
 
-This app is designed to stay local.
+- Create decks manually with a guided builder
+- Import decks from plain-text files
+- Use AI-generated deck content with a dedicated import/instructions flow
+- Save decks locally in the browser for later use
+- Study through multiple-choice sessions with progress tracking and answer recycling
+- Export decks for backup or transfer between devices
 
-- Saved sets, the current raw-text draft, the builder draft, and the auto-advance preference are stored in this browser's `localStorage`.
-- That means they are saved inside the browser profile on that machine, not as separate files next to the app source files.
-- Those saved sets persist when the browser closes and reopens, as long as the same browser profile and the same app origin are being used.
-- Nothing syncs to other devices unless you manually export and import files or build a real backend later.
-- Exporting a set creates a real `.txt` file that the browser downloads, and that file can then be moved wherever the user wants.
+## Core Features
 
-## Storage notes
+- Study mode:
+  Review one card at a time, remove mastered cards from circulation, and revisit missed cards later in the session.
+- Quick Learn mode:
+  Launch a shorter timed session for rapid review.
+- Deck library:
+  Browse, reopen, rename, and manage saved decks from a dedicated library page.
+- Guided set builder:
+  Create cards from term/definition pairs, including optional concept or section labels.
+- Import and export:
+  Move decks in and out of the app using text-based files.
+- Local persistence:
+  Store saved decks, drafts, and user preferences in the browser's `localStorage`.
+- Installable web app:
+  Includes a web manifest and service worker for a more app-like experience.
 
-- `http://localhost:4173` and a hosted website URL are the most dependable ways to keep the same saved-set storage over time.
-- Opening `file:///Users/.../index.html` often still works, but `file://` storage behavior can be more browser-dependent and is less ideal for long-term use.
-- If a user clears browser site data, uses a different browser, or switches browser profiles, the locally saved sets will not follow automatically.
+## How It Works
 
-## Saved sets and library
+Exametrics is fully client-side. There is no database and no server-side account system in the current architecture.
 
-- Use `Open Set Library` on the main page to browse every saved set on that machine.
-- Use `Open AI Set Builder` when you want prompt guidance, concept-header tips, and a dedicated place to paste or upload AI-made decks.
-- Uploaded text decks are saved into the local set library right away, then can be renamed and saved again if needed.
-- Use the `Import or Export` dropdown on the main page when you want to move a set between devices manually.
-- Use `Open Set Builder` if you want to create a set inside the app instead of writing raw deck text yourself.
-- Exported `.txt` deck files can be imported on another device later if you want manual transfer without a backend.
+- Saved decks are stored in the browser on the current device and origin.
+- Draft content and builder state are also persisted locally.
+- Study history for recent sessions is stored locally.
+- To move decks between browsers or devices, export them from one environment and import them into another.
 
-## Builder flow
+Because storage is local to the browser, clearing site data or switching browsers/profiles can remove access to previously saved decks.
 
-- The builder lets you enter one term-definition pair at a time.
-- Each builder card can include an optional concept or section label.
-- Each card can be marked as `definition` first or `term` first.
-- Once you have at least 4 cards, the app auto-generates the final deck text and fills the extra multiple-choice options from the rest of the set.
-- If a correct answer is `True` or `False`, that card stays a two-option true/false card.
+## Running Locally
 
-## Run it
+Because this project is a static site, it can be run with any simple local web server.
 
-Because this app is fully client-side, you have three easy ways to use it:
+### Option 1: Use the included launcher
 
-1. Quickest preview:
-Open `/Users/jackschroeder/Quizlet Knockoff/index.html` directly in a browser.
-
-2. Best local setup:
-Double-click `/Users/jackschroeder/Quizlet Knockoff/scripts/start-local.command`.
-This starts a tiny local server and opens `http://localhost:4173`.
-
-3. Terminal version:
+Run:
 
 ```bash
-cd "/Users/jackschroeder/Quizlet Knockoff"
+./scripts/start-local.command
+```
+
+Then open:
+
+```text
+http://localhost:4173
+```
+
+### Option 2: Start a simple server manually
+
+From the project root:
+
+```bash
 python3 -m http.server 4173 --bind 127.0.0.1
 ```
 
-Then open `http://localhost:4173`.
+Then open:
 
-## Install it on your Mac like an app
+```text
+http://localhost:4173
+```
 
-The local-server version is the best one for this.
+### Option 3: Deploy as a static site
 
-1. Start the app with `scripts/start-local.command`.
-2. Open `http://localhost:4173` in Safari.
-3. In Safari, use the Share button, then choose `Add to Dock`.
-4. Name it `Exametrics` and save it.
+This project can also be hosted on platforms such as GitHub Pages, Netlify, Vercel static hosting, or any standard web server that serves static files.
 
-After that, it behaves like a standalone Mac web app you can launch from the Dock or Spotlight.
+## Deck Format
 
-## Put it on the web
+Decks are text-based and separated by blank lines. Each card supports:
 
-This project is just static HTML, CSS, and JavaScript, so it can be hosted on simple static-site services.
+- An optional `concept:` or `section:` line
+- A required `term:` or `definition:` prompt line
+- Two or more answer options
+- Exactly one correct answer marker
 
-The easiest route is GitHub Pages:
-
-1. Create a new GitHub repository.
-2. Upload the files from this folder.
-3. Enable GitHub Pages for the repository.
-4. Open the generated site URL.
-
-Once it is online, you can open that URL from any device and also add it to your Mac Dock as a web app.
-
-## Deck format
-
-Separate cards with a blank line.
-
-Recommended format:
+Example:
 
 ```text
 concept: Cellular Respiration
-definition: Definition text here
-- * Correct answer
-- Wrong answer
-- Wrong answer
-- Wrong answer
+definition: Water freezes at this temperature on the Celsius scale.
+- * 0°C
+- 100°C
+- -10°C
+- 32°C
 ```
 
-You can also start a card with `term:` if the prompt should show a term and ask the user to choose the correct definition.
-An optional `concept:` line can sit above the prompt line if you want extra context to show during study.
-
-This raw format is mainly needed when you are importing a deck built outside the app.
-
-Supported correct-answer markers:
+Supported correct-answer markers include:
 
 - `- * Correct answer`
 - `- [correct] Correct answer`
 - `- Correct answer *`
 
-Rules:
+This format is used for imports, exports, and AI-generated deck content.
 
-- Optionally start with `concept:` or `section:`.
-- Then start the prompt line with `definition:` or `term:`.
-- Put each answer choice on its own line starting with `-`.
-- Use at least 2 options.
-- Mark exactly 1 option as correct.
+## Project Structure
 
-## Good ChatGPT prompt
+- `index.html`: main app shell and study experience
+- `pages/builder.html`: guided deck builder
+- `pages/library.html`: saved deck library
+- `pages/ai-builder.html`: AI-assisted deck import/instructions page
+- `pages/transfer.html`: import/export workflow
+- `css/styles.css`: application styling and responsive layout
+- `js/shared.js`: shared storage, parsing, import/export, and data utilities
+- `js/app.js`: main study-session logic and homepage interactions
+- `js/builder.js`: builder flow and generated deck preview logic
+- `js/library.js`: saved-deck library interactions
+- `js/ai-builder.js`: AI builder page interactions
+- `js/transfer.js`: import/export page logic
+- `manifest.webmanifest`: installable web app metadata
+- `service-worker.js`: offline/cache behavior
+- `assets/icon.svg`: application icon
+- `sample-decks/sample-deck.txt`: sample deck file
+- `scripts/start-local.command`: helper script for local startup
 
-You can paste this into ChatGPT when you want it to convert notes into a deck:
+## Technology
 
-```text
-Create a study deck in this exact format:
+Exametrics is built with:
 
-1. Start each card with an optional `concept:` line when a section or topic label would help.
-2. Start the prompt line with `definition:` or `term:`.
-3. Put 2 to 4 answer options below it, each starting with "- ".
-4. Mark the correct answer with "- * ".
-5. Separate each card with one blank line.
-6. Propagate each pairing with a mixture of other real definitions or terms from nearby concepts and intentionally plausible, confusable answers.
-7. Alter the pairing format if either the term or definition would be too obvious compared to the distractors.
+- HTML
+- CSS
+- Vanilla JavaScript
+- Browser `localStorage`
+- Progressive Web App primitives (`manifest.webmanifest` and service worker)
 
-Example:
-concept: Cellular Respiration
-definition: Definition text here
-- * Correct answer
-- Wrong answer
-- Wrong answer
-- Wrong answer
-```
+No framework, package manager, or build step is required for the current version.
 
-## Files
+## Use Cases
 
-- `index.html`: the app shell and study screens
-- `pages/builder.html`: dedicated page for building sets from term-definition pairs
-- `pages/library.html`: dedicated page for browsing saved sets
-- `pages/ai-builder.html`: dedicated page for AI-assisted deck import
-- `css/styles.css`: layout, colors, responsive styling, and feedback states
-- `js/shared.js`: saved-set storage, import/export, and deck parsing helpers
-- `js/app.js`: study flow, auto advance, and main-page interactions
-- `js/builder.js`: guided set-builder interactions and generated deck preview
-- `js/library.js`: saved-set library page interactions
-- `js/ai-builder.js`: AI import page interactions
-- `assets/icon.svg`: installable app icon
-- `sample-decks/sample-deck.txt`: example input deck
-- `scripts/start-local.command`: local launcher script
+Exametrics is a good fit for:
+
+- Personal exam prep
+- Vocabulary or terminology drills
+- Definition-based review sets
+- Lightweight classroom or tutoring materials
+- Quick local prototypes for browser-based study tools
+
+## Current Scope
+
+The current project is intentionally simple and local-first. It does not currently include:
+
+- User accounts
+- Cloud sync
+- Shared collaborative editing
+- Server-side analytics
+- Centralized deck storage
+
+Those capabilities could be added later with a backend or hosted data layer if needed.

@@ -1161,7 +1161,7 @@ function renderRecentSets() {
       createRecentActionButton("Study", "button button-primary button-compact", () =>
         launchSavedSet(set.id, "learn"),
       ),
-      createRecentActionButton("Quick Learn", "button button-secondary button-compact", () =>
+      createRecentActionButton("Quick Learn", "button button-quick button-compact", () =>
         launchSavedSet(set.id, "quickLearn"),
       ),
     );
