@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Exametrics Library</title>
+    <meta name="theme-color" content="#0f7b6c" />
+    <meta
+      name="description"
+      content="Browse the saved study sets on this device and jump back into learning."
+    />
+    <link rel="icon" href="../assets/icon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="stylesheet" href="../css/styles.css" />
+    <script src="../js/shared.js" defer></script>
+    <script src="../js/library.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero">
+        <p class="eyebrow">Local set manager</p>
+        <h1>Exametrics Library</h1>
+        <p class="hero-copy">
+          Browse the saved sets in this browser and jump straight back into studying.
+        </p>
+      </header>
+
+      <main class="main-panel">
+        <section class="library-page">
+          <div class="library-toolbar">
+            <div class="section-heading">
+              <p class="section-kicker">Saved on this device</p>
+              <h2>Browse your set library</h2>
+            </div>
+
+            <div class="library-toolbar-actions">
+              <a href="../index.html" class="button button-primary button-link">Home</a>
+              <a href="./builder.html" class="button button-ghost button-link">New</a>
+              <a href="./ai-builder.html" class="button button-ghost button-link">AI Set Instructions</a>
+              <a href="./transfer.html" class="button button-ghost button-link">Import/Export</a>
+            </div>
+          </div>
+
+          <p id="library-message" class="setup-message" aria-live="polite"></p>
+          <div id="library-list" class="saved-sets-list library-list"></div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

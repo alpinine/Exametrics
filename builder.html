@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Exametrics New Set</title>
+    <meta name="theme-color" content="#0f7b6c" />
+    <meta
+      name="description"
+      content="Upload a deck or build one card by card, then save it into Exametrics."
+    />
+    <link rel="icon" href="../assets/icon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="stylesheet" href="../css/styles.css" />
+    <script src="../js/shared.js" defer></script>
+    <script src="../js/builder.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero">
+        <p class="eyebrow">Create something new</p>
+        <h1>New Set</h1>
+        <p class="hero-copy">
+          Upload a text deck or build one card at a time, then let Exametrics generate the final study set for you automatically.
+        </p>
+      </header>
+
+      <main class="main-panel">
+        <section class="builder-page">
+          <div class="library-toolbar">
+            <div class="section-heading">
+              <h2>Create a study set</h2>
+            </div>
+
+            <div class="library-toolbar-actions">
+              <a href="../index.html" class="button button-primary button-link">Home</a>
+              <a href="./library.html" class="button button-ghost button-link">Library</a>
+              <a href="./ai-builder.html" class="button button-ghost button-link">AI Set Instructions</a>
+              <a href="./transfer.html" class="button button-ghost button-link">Import/Export</a>
+            </div>
+          </div>
+
+          <div class="builder-grid">
+            <section class="editor-panel">
+              <div class="section-heading">
+                <h2>Upload or build manually</h2>
+              </div>
+
+              <label class="menu-label" for="builder-set-name-input">Set name</label>
+              <input
+                id="builder-set-name-input"
+                class="set-name-input"
+                type="text"
+                maxlength="80"
+                placeholder="Name this set"
+              />
+
+              <div class="upload-strip">
+                <label class="button button-secondary upload-button upload-wide-button" for="builder-file-input">
+                  Upload
+                </label>
+                <p class="upload-strip-note">Accepts `.txt` and `.md` files only.</p>
+              </div>
+              <input id="builder-file-input" type="file" accept=".txt,.md,text/plain" hidden />
+
+              <div class="section-heading section-heading-subtle">
+                <h3>Build manually</h3>
+              </div>
+
+              <form id="builder-form" class="builder-form">
+                <label class="menu-label" for="builder-concept-input">Concept or section</label>
+                <input
+                  id="builder-concept-input"
+                  class="set-name-input"
+                  type="text"
+                  maxlength="120"
+                  placeholder="Optional: Cell Biology, Chapter 4, Unit 2"
+                />
+
+                <label class="menu-label" for="builder-prompt-type-select">Prompt shows</label>
+                <select id="builder-prompt-type-select" class="menu-select">
+                  <option value="definition">Definition first, answer with the term</option>
+                  <option value="term">Term first, answer with the definition</option>
+                </select>
+
+                <label class="menu-label" for="builder-term-input">Term</label>
+                <textarea
+                  id="builder-term-input"
+                  class="builder-textarea"
+                  rows="3"
+                  placeholder="Enter the term"
+                ></textarea>
+
+                <label class="menu-label" for="builder-definition-input">Definition</label>
+                <textarea
+                  id="builder-definition-input"
+                  class="builder-textarea"
+                  rows="4"
+                  placeholder="Enter the definition"
+                ></textarea>
+
+                <div class="menu-actions">
+                  <button id="builder-save-entry-button" class="button button-primary" type="submit">
+                    Add Card
+                  </button>
+                  <button id="builder-clear-form-button" class="button button-ghost" type="button">
+                    Clear Form
+                  </button>
+                </div>
+              </form>
+
+              <p id="builder-message" class="setup-message" aria-live="polite"></p>
+              <p id="builder-count-note" class="guide-copy builder-count-note"></p>
+              <div id="builder-entries-list" class="saved-sets-list"></div>
+            </section>
+
+            <aside class="guide-panel">
+              <div class="guide-card">
+                <div class="section-heading">
+                  <p class="section-kicker">2. Generated deck</p>
+                  <h2>Live `.txt` preview</h2>
+                </div>
+
+                <p id="builder-preview-status" class="guide-copy">
+                  Add at least 4 complete cards to generate a full multiple-choice deck.
+                </p>
+
+                <pre class="builder-preview"><code id="builder-preview-code"></code></pre>
+
+                <div class="menu-actions">
+                  <button id="builder-save-set-button" class="button button-secondary" type="button">
+                    Save Set
+                  </button>
+                  <button id="builder-study-set-button" class="button button-primary" type="button">
+                    Save and Study
+                  </button>
+                  <button id="builder-open-set-button" class="button button-ghost" type="button">
+                    Save and View Library
+                  </button>
+                  <button id="builder-download-set-button" class="button button-ghost" type="button">
+                    Download `.txt`
+                  </button>
+                </div>
+              </div>
+
+              <div class="guide-card">
+                <div class="section-heading">
+                  <p class="section-kicker">How options work</p>
+                  <h2>Auto-fill rules</h2>
+                </div>
+
+                <p class="guide-copy">
+                  For `definition` cards, the correct answer is the term. For `term`
+                  cards, the correct answer is the definition.
+                </p>
+
+                <p class="guide-copy">
+                  Add an optional concept or section label if you want each card to show
+                  extra context during study, like `Concept · Cellular Respiration`.
+                </p>
+
+                <p class="guide-copy">
+                  The builder first pulls distractors from the same answer type, then
+                  falls back to any other available texts only if it needs to.
+                </p>
+
+                <p class="guide-copy">
+                  AI or imported decks can be edited here too. If a deck started as raw text,
+                  Exametrics automatically rebuilds it into builder cards while keeping the
+                  concept line, prompt direction, term, and definition.
+                </p>
+
+                <p class="guide-copy">
+                  True/false answers stay as two-option cards. Everything else becomes
+                  four-option multiple choice.
+                </p>
+              </div>
+            </aside>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

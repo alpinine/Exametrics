@@ -54,7 +54,7 @@ Because this app is fully client-side, you have three easy ways to use it:
 Open `/Users/jackschroeder/Quizlet Knockoff/index.html` directly in a browser.
 
 2. Best local setup:
-Double-click `/Users/jackschroeder/Quizlet Knockoff/start-local.command`.
+Double-click `/Users/jackschroeder/Quizlet Knockoff/scripts/start-local.command`.
 This starts a tiny local server and opens `http://localhost:4173`.
 
 3. Terminal version:
@@ -70,7 +70,7 @@ Then open `http://localhost:4173`.
 
 The local-server version is the best one for this.
 
-1. Start the app with `start-local.command`.
+1. Start the app with `scripts/start-local.command`.
 2. Open `http://localhost:4173` in Safari.
 3. In Safari, use the Share button, then choose `Add to Dock`.
 4. Name it `Exametrics` and save it.
@@ -151,11 +151,15 @@ definition: Definition text here
 ## Files
 
 - `index.html`: the app shell and study screens
-- `builder.html`: dedicated page for building sets from term-definition pairs
-- `library.html`: dedicated page for browsing saved sets
-- `styles.css`: layout, colors, responsive styling, and feedback states
-- `shared.js`: saved-set storage, import/export, and deck parsing helpers
-- `app.js`: study flow, auto advance, and main-page interactions
-- `builder.js`: guided set-builder interactions and generated deck preview
-- `library.js`: saved-set library page interactions
-- `sample-deck.txt`: example input deck
+- `pages/builder.html`: dedicated page for building sets from term-definition pairs
+- `pages/library.html`: dedicated page for browsing saved sets
+- `pages/ai-builder.html`: dedicated page for AI-assisted deck import
+- `css/styles.css`: layout, colors, responsive styling, and feedback states
+- `js/shared.js`: saved-set storage, import/export, and deck parsing helpers
+- `js/app.js`: study flow, auto advance, and main-page interactions
+- `js/builder.js`: guided set-builder interactions and generated deck preview
+- `js/library.js`: saved-set library page interactions
+- `js/ai-builder.js`: AI import page interactions
+- `assets/icon.svg`: installable app icon
+- `sample-decks/sample-deck.txt`: example input deck
+- `scripts/start-local.command`: local launcher script

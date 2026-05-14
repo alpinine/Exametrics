@@ -1,16 +1,18 @@
-const CACHE_NAME = "recall-loop-v16";
+const CACHE_NAME = "recall-loop-v18";
 const CORE_ASSETS = [
   "./",
   "./index.html",
   "./pages/library.html",
   "./pages/builder.html",
   "./pages/ai-builder.html",
+  "./pages/transfer.html",
   "./css/styles.css",
   "./js/shared.js",
   "./js/app.js",
   "./js/library.js",
   "./js/builder.js",
   "./js/ai-builder.js",
+  "./js/transfer.js",
   "./manifest.webmanifest",
   "./assets/icon.svg",
   "./sample-decks/sample-deck.txt",
