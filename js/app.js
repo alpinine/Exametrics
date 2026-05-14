@@ -49,11 +49,12 @@ const elements = {
   setupMessage: document.getElementById("setup-message"),
   progressLabel: document.getElementById("progress-label"),
   queueLabel: document.getElementById("queue-label"),
+  progressTrack: document.querySelector(".progress-track"),
   progressFill: document.getElementById("progress-fill"),
+  progressSegments: document.getElementById("progress-segments"),
   sessionBadge: document.getElementById("session-badge"),
   timerPanel: document.getElementById("timer-panel"),
   timerValue: document.getElementById("timer-value"),
-  swapModeButton: document.getElementById("swap-mode-button"),
   homeButton: document.getElementById("home-button"),
   autoAdvanceToggle: document.getElementById("auto-advance-toggle"),
   autoAdvanceStatus: document.getElementById("auto-advance-status"),
@@ -97,7 +98,7 @@ const state = {
   savedSets: [],
   attemptHistory: [],
   selectedSetId: "",
-  sessionMode: "learn",
+  sessionMode: "regular",
   autoAdvanceEnabled: true,
   autoAdvanceTimeoutId: null,
   timerIntervalId: null,
@@ -108,6 +109,10 @@ const state = {
   pastePanelOpen: false,
   deckSourceKind: "empty",
   sessionHistoryRecorded: false,
+  returnPath: "./index.html",
+  comprehensiveGroups: [],
+  currentGroupIndex: 0,
+  questionStreaks: new Map(),
 };
 
 initialize();
@@ -149,13 +154,12 @@ function bindEvents() {
   elements.importSetInput.addEventListener("change", handleSetImport);
   elements.saveSetButton.addEventListener("click", saveCurrentSet);
   elements.exportCurrentSetButton.addEventListener("click", exportCurrentSet);
-  elements.swapModeButton.addEventListener("click", swapSessionMode);
-  elements.homeButton.addEventListener("click", returnToSetup);
+  elements.homeButton.addEventListener("click", returnFromStudy);
   elements.autoAdvanceToggle.addEventListener("change", handleAutoAdvanceToggle);
   elements.backButton.addEventListener("click", goBackOneQuestion);
   elements.nextButton.addEventListener("click", advanceToNextCard);
   elements.studyAgainButton.addEventListener("click", restartSession);
-  elements.doneButton.addEventListener("click", returnToSetup);
+  elements.doneButton.addEventListener("click", returnFromStudy);
   elements.deckInput.addEventListener("input", handleDeckInput);
 }
 
@@ -175,17 +179,11 @@ function applyPendingAction() {
 
   loadSetIntoEditor(matchingSet, "saved");
   showSetupMessage(`Loaded "${matchingSet.name}" from your set library.`);
-
-  if (pendingAction.type === "study") {
-    markSetAsUsed(matchingSet.id);
-    startSessionFromInput();
-    return;
-  }
-
-  if (pendingAction.type === "quickLearn") {
-    markSetAsUsed(matchingSet.id);
-    startSessionFromInput({ mode: "quickLearn" });
-  }
+  markSetAsUsed(matchingSet.id);
+  startSessionFromInput({
+    mode: normalizeSessionMode(pendingAction.type),
+    returnPath: normalizeReturnPath(pendingAction.returnPath),
+  });
 }
 
 function handleDeckInput() {
@@ -539,7 +537,7 @@ function startSessionFromInput(options = {}) {
   clearAutoAdvanceTimeout();
   clearQuickLearnTimer();
   const rawDeck = elements.deckInput.value.trim();
-  const sessionMode = options.mode === "quickLearn" ? "quickLearn" : "learn";
+  const sessionMode = normalizeSessionMode(options.mode);
 
   if (!rawDeck) {
     showSetupMessage("Load, build, or paste a deck before starting.", true);
@@ -554,6 +552,7 @@ function startSessionFromInput(options = {}) {
         : parsedQuestions;
 
     state.sessionMode = sessionMode;
+    state.returnPath = normalizeReturnPath(options.returnPath, state.returnPath);
     state.sourceQuestions = parsedQuestions;
     state.questions = sessionQuestions;
     state.questionBank = new Map(sessionQuestions.map((question) => [question.id, question]));
@@ -578,18 +577,16 @@ function startSessionFromInput(options = {}) {
 function resetSessionState() {
   clearAutoAdvanceTimeout();
   clearQuickLearnTimer();
-  state.queue = shuffleArray(
-    state.questions.map((question) => ({
-      questionId: question.id,
-      retryCount: 0,
-    })),
-  );
+  state.queue = [];
   state.currentItem = null;
   state.currentQuestion = null;
   state.renderedOptions = [];
   state.answered = false;
   state.answerHistory = [];
   state.masteredIds = new Set();
+  state.comprehensiveGroups = [];
+  state.currentGroupIndex = 0;
+  state.questionStreaks = new Map();
   state.stats = {
     attempts: 0,
     misses: 0,
@@ -599,12 +596,27 @@ function resetSessionState() {
   state.sessionStartedAt = 0;
   state.sessionCompletedAt = 0;
   state.sessionHistoryRecorded = false;
+
+  if (state.sessionMode === "comprehensive") {
+    state.comprehensiveGroups = buildComprehensiveGroups(state.questions);
+    state.queue = buildQuestionQueue(getCurrentComprehensiveGroupQuestionIds());
+    return;
+  }
+
+  state.queue = buildQuestionQueue(state.questions.map((question) => question.id), {
+    includeRetryCount: state.sessionMode === "regular",
+  });
 }
 
 function advanceToNextCard() {
   clearAutoAdvanceTimeout();
 
-  if (state.queue.length === 0) {
+  while (state.queue.length === 0) {
+    if (state.sessionMode === "comprehensive" && moveToNextComprehensiveGroup()) {
+      renderProgress();
+      continue;
+    }
+
     finishSession();
     return;
   }
@@ -625,9 +637,9 @@ function advanceToNextCard() {
 
 function renderCurrentCard() {
   const shouldShowRetry =
-    state.sessionMode === "learn" && Number(state.currentItem?.retryCount ?? 0) > 0;
+    state.sessionMode === "regular" && Number(state.currentItem?.retryCount ?? 0) > 0;
 
-  elements.questionCount.textContent = getQuestionCountLabel();
+  updateQuestionCountLabel();
   elements.retryPill.hidden = !shouldShowRetry;
   elements.retryPill.style.display = shouldShowRetry ? "inline-flex" : "none";
   elements.conceptLabel.hidden = !state.currentQuestion.concept;
@@ -635,7 +647,7 @@ function renderCurrentCard() {
     ? `Concept · ${state.currentQuestion.concept}`
     : "";
   elements.promptKindLabel.textContent = capitalizePromptType(state.currentQuestion.promptType);
-  elements.definitionText.textContent = state.currentQuestion.definition;
+  renderPromptContent(state.currentQuestion);
   elements.feedbackText.textContent = "";
   elements.feedbackText.className = "feedback-text";
   elements.nextButton.hidden = true;
@@ -652,17 +664,73 @@ function renderCurrentCard() {
   });
 }
 
+function renderPromptContent(question) {
+  elements.definitionText.innerHTML = "";
+
+  const promptLines = Array.isArray(question.promptLines) && question.promptLines.length > 0
+    ? question.promptLines
+    : String(question.promptText || question.definition || "")
+        .split(/\r?\n/g)
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+  if (promptLines.length === 0) {
+    return;
+  }
+
+  const [firstLine, ...remainingLines] = promptLines;
+  const heading = document.createElement("p");
+  heading.className = "definition-text-heading";
+  heading.textContent = stripPromptBulletMarker(firstLine);
+  elements.definitionText.appendChild(heading);
+
+  let listElement = null;
+
+  remainingLines.forEach((line) => {
+    if (isPromptBulletLine(line)) {
+      if (!listElement) {
+        listElement = document.createElement("ul");
+        listElement.className = "definition-text-list";
+        elements.definitionText.appendChild(listElement);
+      }
+
+      const item = document.createElement("li");
+      item.textContent = stripPromptBulletMarker(line);
+      listElement.appendChild(item);
+      return;
+    }
+
+    listElement = null;
+    const paragraph = document.createElement("p");
+    paragraph.className = "definition-text-line";
+    paragraph.textContent = line;
+    elements.definitionText.appendChild(paragraph);
+  });
+}
+
+function isPromptBulletLine(line) {
+  return /^(\*|-)\s+/.test(line);
+}
+
+function stripPromptBulletMarker(line) {
+  return String(line || "").replace(/^(\*|-)\s+/, "");
+}
+
 function handleAnswer(selectedIndex) {
   if (state.answered) {
     return;
   }
 
+  state.answerHistory.push(captureAnswerSnapshot());
   state.answered = true;
   state.stats.attempts += 1;
 
   const buttons = Array.from(elements.optionsGrid.querySelectorAll(".option-button"));
   const correctIndex = state.currentQuestion.options.findIndex((option) => option.isCorrect);
   const wasCorrect = selectedIndex === correctIndex;
+  const currentQuestionId = state.currentQuestion.id;
+  let questionJustMastered = false;
+  let currentStreak = 0;
 
   buttons.forEach((button, position) => {
     const option = state.renderedOptions[position];
@@ -678,31 +746,39 @@ function handleAnswer(selectedIndex) {
   });
 
   if (wasCorrect) {
-    state.masteredIds.add(state.currentQuestion.id);
-    elements.feedbackText.textContent = getCorrectFeedback(state.currentItem.retryCount);
-    elements.feedbackText.classList.add("success");
+    if (state.sessionMode === "comprehensive") {
+      currentStreak = (state.questionStreaks.get(currentQuestionId) || 0) + 1;
+      state.questionStreaks.set(currentQuestionId, currentStreak);
+      questionJustMastered = currentStreak >= 2;
+
+      if (questionJustMastered) {
+        state.masteredIds.add(currentQuestionId);
+      } else {
+        requeueCurrentItemRandomly();
+      }
+    } else {
+      questionJustMastered = true;
+      state.masteredIds.add(currentQuestionId);
+    }
+
+    showAnswerFeedback(questionJustMastered);
   } else {
     state.stats.misses += 1;
 
-    if (state.sessionMode === "learn") {
+    if (state.sessionMode === "regular") {
       state.queue.push({
         questionId: state.currentQuestion.id,
         retryCount: state.currentItem.retryCount + 1,
       });
+    } else if (state.sessionMode === "comprehensive") {
+      state.questionStreaks.set(currentQuestionId, 0);
+      requeueCurrentItemRandomly();
     }
 
-    const correctAnswer = state.currentQuestion.options[correctIndex].text;
-    elements.feedbackText.textContent = getIncorrectFeedback(correctAnswer);
-    elements.feedbackText.classList.add("error");
+    showAnswerFeedback(false);
   }
 
-  state.answerHistory.push({
-    questionId: state.currentQuestion.id,
-    retryCount: state.currentItem.retryCount,
-    wasCorrect,
-  });
-
-  if (state.queue.length === 0) {
+  if (isSessionComplete()) {
     state.sessionCompletedAt = Date.now();
 
     if (state.sessionMode === "quickLearn") {
@@ -710,6 +786,7 @@ function handleAnswer(selectedIndex) {
     }
   }
 
+  updateQuestionCountLabel();
   renderProgress();
   updateBackButton();
 
@@ -722,36 +799,14 @@ function handleAnswer(selectedIndex) {
   syncNextButton();
 }
 
-function getCorrectFeedback(retryCount) {
-  if (state.sessionMode === "quickLearn") {
-    return state.autoAdvanceEnabled
-      ? "Correct. Moving to the next question..."
-      : "Correct.";
+function showAnswerFeedback(questionJustMastered) {
+  elements.feedbackText.className = "feedback-text";
+  const shouldCelebrate = state.sessionMode === "comprehensive" && questionJustMastered;
+  elements.feedbackText.textContent = shouldCelebrate ? "Mastered!" : "";
+
+  if (shouldCelebrate) {
+    elements.feedbackText.classList.add("mastered");
   }
-
-  if (state.autoAdvanceEnabled) {
-    return retryCount > 0
-      ? "Correct. That retry card is now cleared. Moving to the next card..."
-      : "Correct. This card leaves the queue. Moving to the next card...";
-  }
-
-  return retryCount > 0
-    ? "Correct. That retry card is now cleared."
-    : "Correct. This card leaves the queue.";
-}
-
-function getIncorrectFeedback(correctAnswer) {
-  if (state.sessionMode === "quickLearn") {
-    return state.autoAdvanceEnabled
-      ? `Not quite. The correct answer is "${correctAnswer}". Moving to the next question...`
-      : `Not quite. The correct answer is "${correctAnswer}".`;
-  }
-
-  if (state.autoAdvanceEnabled) {
-    return `Not quite. The correct answer is "${correctAnswer}". You'll see this card again, then we'll move on.`;
-  }
-
-  return `Not quite. The correct answer is "${correctAnswer}". You'll see this card again.`;
 }
 
 function renderProgress() {
@@ -764,14 +819,195 @@ function renderProgress() {
     percent = totalQuestions === 0 ? 0 : (state.stats.attempts / totalQuestions) * 100;
     elements.progressLabel.textContent = `${correctAnswers} / ${totalQuestions} correct`;
     elements.queueLabel.textContent = `${activeCards} question${activeCards === 1 ? "" : "s"} left in this sprint`;
+    renderLinearProgress(percent);
+  } else if (state.sessionMode === "comprehensive") {
+    const currentGroup = getCurrentComprehensiveGroup();
+    const currentGroupSize = currentGroup ? currentGroup.questionIds.length : 0;
+    const groupMasteredCount = getCurrentComprehensiveMasteredCount();
+    elements.progressLabel.textContent = `Group ${state.currentGroupIndex + 1} of ${state.comprehensiveGroups.length} • ${groupMasteredCount} / ${currentGroupSize} mastered`;
+    elements.queueLabel.textContent = `${activeCards} active card${activeCards === 1 ? "" : "s"} left in this group • each card needs 2 in a row`;
+    renderComprehensiveProgress();
   } else {
     const mastered = state.masteredIds.size;
     percent = totalQuestions === 0 ? 0 : (mastered / totalQuestions) * 100;
     elements.progressLabel.textContent = `${mastered} / ${totalQuestions} mastered`;
     elements.queueLabel.textContent = `${activeCards} card${activeCards === 1 ? "" : "s"} still in circulation`;
+    renderLinearProgress(percent);
+  }
+}
+
+function renderLinearProgress(percent) {
+  elements.progressTrack.classList.remove("is-segmented");
+  elements.progressFill.hidden = false;
+  elements.progressSegments.hidden = true;
+  elements.progressSegments.innerHTML = "";
+  elements.progressFill.style.width = `${percent}%`;
+}
+
+function renderComprehensiveProgress() {
+  elements.progressTrack.classList.add("is-segmented");
+  elements.progressFill.hidden = true;
+  elements.progressSegments.hidden = false;
+  elements.progressSegments.innerHTML = "";
+
+  state.comprehensiveGroups.forEach((group, index) => {
+    const segment = document.createElement("div");
+    segment.className = "progress-segment";
+    segment.style.flexGrow = String(group.questionIds.length);
+
+    const fill = document.createElement("div");
+    fill.className = "progress-segment-fill";
+
+    const masteredCount = group.questionIds.filter((questionId) => state.masteredIds.has(questionId)).length;
+    const percent = group.questionIds.length === 0 ? 0 : (masteredCount / group.questionIds.length) * 100;
+
+    if (index < state.currentGroupIndex) {
+      fill.classList.add("is-mastered");
+      fill.style.width = "100%";
+    } else if (index === state.currentGroupIndex) {
+      fill.classList.add(percent >= 100 ? "is-mastered" : "is-active");
+      fill.style.width = `${percent}%`;
+    } else {
+      fill.style.width = "0%";
+    }
+
+    segment.appendChild(fill);
+    elements.progressSegments.appendChild(segment);
+  });
+}
+
+function buildQuestionQueue(questionIds, options = {}) {
+  const { includeRetryCount = false } = options;
+
+  return shuffleArray(
+    questionIds.map((questionId) => ({
+      questionId,
+      retryCount: includeRetryCount ? 0 : 0,
+    })),
+  );
+}
+
+function buildComprehensiveGroups(questions) {
+  if (questions.length === 0) {
+    return [];
   }
 
-  elements.progressFill.style.width = `${percent}%`;
+  const groupCount = 3;
+  const baseSize = Math.floor(questions.length / groupCount);
+  const remainder = questions.length % groupCount;
+  const groups = [];
+  let cursor = 0;
+
+  for (let index = 0; index < groupCount; index += 1) {
+    const size = baseSize + (index < remainder ? 1 : 0);
+    const groupQuestions = questions.slice(cursor, cursor + size);
+    groups.push({
+      index,
+      questionIds: groupQuestions.map((question) => question.id),
+    });
+    cursor += size;
+  }
+
+  return groups;
+}
+
+function getCurrentComprehensiveGroup() {
+  return state.comprehensiveGroups[state.currentGroupIndex] || null;
+}
+
+function getCurrentComprehensiveGroupQuestionIds() {
+  return getCurrentComprehensiveGroup()?.questionIds || [];
+}
+
+function getCurrentComprehensiveMasteredCount() {
+  return getCurrentComprehensiveGroupQuestionIds().filter((questionId) =>
+    state.masteredIds.has(questionId),
+  ).length;
+}
+
+function getNextComprehensiveGroupIndex() {
+  for (let index = state.currentGroupIndex + 1; index < state.comprehensiveGroups.length; index += 1) {
+    if ((state.comprehensiveGroups[index]?.questionIds.length || 0) > 0) {
+      return index;
+    }
+  }
+
+  return -1;
+}
+
+function hasNextComprehensiveGroup() {
+  return getNextComprehensiveGroupIndex() >= 0;
+}
+
+function moveToNextComprehensiveGroup() {
+  if (state.sessionMode !== "comprehensive" || !hasNextComprehensiveGroup()) {
+    return false;
+  }
+
+  state.currentGroupIndex = getNextComprehensiveGroupIndex();
+  state.queue = buildQuestionQueue(getCurrentComprehensiveGroupQuestionIds());
+  return true;
+}
+
+function requeueCurrentItemRandomly() {
+  if (!state.currentItem) {
+    return;
+  }
+
+  const insertionIndex = Math.floor(Math.random() * (state.queue.length + 1));
+  state.queue.splice(insertionIndex, 0, {
+    questionId: state.currentItem.questionId,
+    retryCount: state.currentItem.retryCount,
+  });
+}
+
+function isSessionComplete() {
+  if (state.queue.length > 0) {
+    return false;
+  }
+
+  if (state.sessionMode === "comprehensive") {
+    return !hasNextComprehensiveGroup();
+  }
+
+  return true;
+}
+
+function captureAnswerSnapshot() {
+  return {
+    queue: state.queue.map((item) => ({ ...item })),
+    currentItem: state.currentItem ? { ...state.currentItem } : null,
+    currentQuestionId: state.currentQuestion?.id || "",
+    renderedOptions: state.renderedOptions.map((option) => ({ ...option })),
+    masteredIds: Array.from(state.masteredIds),
+    questionStreaks: Array.from(state.questionStreaks.entries()),
+    currentGroupIndex: state.currentGroupIndex,
+    stats: {
+      ...state.stats,
+    },
+    sessionCompletedAt: state.sessionCompletedAt,
+  };
+}
+
+function restoreAnswerSnapshot(snapshot) {
+  if (!snapshot) {
+    return;
+  }
+
+  state.queue = snapshot.queue.map((item) => ({ ...item }));
+  state.currentItem = snapshot.currentItem ? { ...snapshot.currentItem } : null;
+  state.currentQuestion = state.questionBank.get(snapshot.currentQuestionId) || null;
+  state.renderedOptions = snapshot.renderedOptions.map((option) => ({ ...option }));
+  state.masteredIds = new Set(snapshot.masteredIds);
+  state.questionStreaks = new Map(snapshot.questionStreaks);
+  state.currentGroupIndex = snapshot.currentGroupIndex;
+  state.stats = {
+    ...snapshot.stats,
+  };
+  state.sessionCompletedAt = snapshot.sessionCompletedAt;
+  state.answered = false;
+  renderProgress();
+  renderCurrentCard();
 }
 
 function handleAutoAdvanceToggle() {
@@ -827,6 +1063,12 @@ function finishSession() {
           ? `Perfect run. You answered all ${totalQuestions} quick questions correctly with ${timeLeft} left.`
           : `You finished all ${totalQuestions} quick questions with ${correctAnswers} correct and ${timeLeft} left on the clock.`;
     }
+  } else if (state.sessionMode === "comprehensive") {
+    elements.finishTitle.textContent = "Comprehensive study complete.";
+    summary =
+      misses === 0
+        ? `You cleared all ${state.comprehensiveGroups.length} groups and mastered every card with perfect streaks.`
+        : `You cleared all ${state.comprehensiveGroups.length} groups, mastered all ${totalQuestions} cards, and worked through ${misses} reset${misses === 1 ? "" : "s"} along the way.`;
   } else {
     elements.finishTitle.textContent = "All terms cleared.";
     summary =
@@ -841,57 +1083,20 @@ function finishSession() {
 }
 
 function goBackOneQuestion() {
-  if (state.answered || state.answerHistory.length === 0 || !state.currentItem) {
+  if (state.answered || state.answerHistory.length === 0) {
     return;
   }
 
   clearAutoAdvanceTimeout();
-
-  const previousAnswer = state.answerHistory.pop();
-  state.queue.unshift({
-    questionId: state.currentItem.questionId,
-    retryCount: state.currentItem.retryCount,
-  });
-
-  state.stats.attempts = Math.max(0, state.stats.attempts - 1);
-
-  if (previousAnswer.wasCorrect) {
-    state.masteredIds.delete(previousAnswer.questionId);
-  } else {
-    state.stats.misses = Math.max(0, state.stats.misses - 1);
-
-    if (state.sessionMode === "learn") {
-      removeQueuedRetry(previousAnswer);
-    }
-  }
-
-  state.currentItem = {
-    questionId: previousAnswer.questionId,
-    retryCount: previousAnswer.retryCount,
-  };
-  state.currentQuestion = state.questionBank.get(previousAnswer.questionId);
-
-  if (!state.currentQuestion) {
-    advanceToNextCard();
-    return;
-  }
-
-  state.renderedOptions = shuffleArray(
-    state.currentQuestion.options.map((option, index) => ({
-      ...option,
-      originalIndex: index,
-    })),
-  );
-  state.answered = false;
-  renderProgress();
-  renderCurrentCard();
+  const previousSnapshot = state.answerHistory.pop();
+  restoreAnswerSnapshot(previousSnapshot);
 }
 
 function restartSession() {
   clearAutoAdvanceTimeout();
 
   if (state.sourceQuestions.length === 0 && state.questions.length === 0) {
-    returnToSetup();
+    returnFromStudy();
     return;
   }
 
@@ -913,9 +1118,15 @@ function restartSession() {
   advanceToNextCard();
 }
 
-function returnToSetup() {
+function returnFromStudy() {
   clearAutoAdvanceTimeout();
   clearQuickLearnTimer();
+
+  if (normalizeReturnPath(state.returnPath) !== "./index.html") {
+    window.location.href = state.returnPath;
+    return;
+  }
+
   state.savedSets = RecallLoopStore.loadSavedSets();
   renderRecentSets();
   showView("setup");
@@ -1069,9 +1280,9 @@ function recordSessionHistory() {
 }
 
 function renderHistoryPanel() {
-  const activeMode = state.sessionMode === "quickLearn" ? "quickLearn" : "learn";
+  const activeMode = state.sessionMode;
   const history = state.attemptHistory
-    .filter((entry) => (entry.sessionMode || "learn") === activeMode)
+    .filter((entry) => (entry.sessionMode || "regular") === activeMode)
     .slice(-10);
   elements.historyChart.innerHTML = "";
   elements.historyTitle.textContent = `Last 10 ${getSessionModeLabel(activeMode)} sessions`;
@@ -1081,7 +1292,9 @@ function renderHistoryPanel() {
     elements.historyEmpty.textContent =
       activeMode === "quickLearn"
         ? "No Quick Learn data yet. Finish a quick session and your score trend will appear here."
-        : "No Learn data yet. Finish a Learn session and your score trend will appear here.";
+        : activeMode === "comprehensive"
+          ? "No Comprehensive data yet. Finish a comprehensive session and your score trend will appear here."
+        : "No Regular data yet. Finish a regular study session and your score trend will appear here.";
     elements.historyEmpty.hidden = false;
     elements.historyChart.hidden = true;
     elements.historyNote.hidden = true;
@@ -1097,7 +1310,9 @@ function renderHistoryPanel() {
   elements.historyNote.textContent =
     activeMode === "quickLearn"
       ? "Score = correct answers divided by total answer attempts. The line runs oldest to newest, with time left shown under each Quick Learn session."
-      : "Score = correct answers divided by total answer attempts. The line runs oldest to newest, with time spent shown under each Learn session.";
+      : activeMode === "comprehensive"
+        ? "Score = correct answers divided by total answer attempts. The line runs oldest to newest, with total time spent shown under each Comprehensive session."
+      : "Score = correct answers divided by total answer attempts. The line runs oldest to newest, with time spent shown under each Regular session.";
   elements.historyEmpty.hidden = true;
   elements.historyChart.hidden = false;
   elements.historyNote.hidden = false;
@@ -1158,11 +1373,8 @@ function renderRecentSets() {
     const actions = document.createElement("div");
     actions.className = "recent-set-actions";
     actions.append(
-      createRecentActionButton("Study", "button button-primary button-compact", () =>
-        launchSavedSet(set.id, "learn"),
-      ),
-      createRecentActionButton("Quick Learn", "button button-quick button-compact", () =>
-        launchSavedSet(set.id, "quickLearn"),
+      createRecentActionButton("Study", "button button-quick button-compact", () =>
+        launchSavedSet(set.id),
       ),
     );
 
@@ -1180,7 +1392,7 @@ function createRecentActionButton(label, className, onClick) {
   return button;
 }
 
-function launchSavedSet(setId, mode = "learn") {
+async function launchSavedSet(setId) {
   const matchingSet = state.savedSets.find((set) => set.id === setId);
   if (!matchingSet) {
     showSetupMessage("That saved set is no longer available on this device.", true);
@@ -1189,9 +1401,21 @@ function launchSavedSet(setId, mode = "learn") {
     return;
   }
 
+  const selectedMode = await RecallLoopStore.promptForStudyMode({
+    title: `Study "${matchingSet.name}"`,
+    description: "Choose how you want to work through this deck before the session begins.",
+  });
+
+  if (!selectedMode) {
+    return;
+  }
+
   loadSetIntoEditor(matchingSet, "saved");
   markSetAsUsed(setId);
-  startSessionFromInput({ mode });
+  startSessionFromInput({
+    mode: selectedMode,
+    returnPath: "./index.html",
+  });
 }
 
 function markSetAsUsed(setId) {
@@ -1233,12 +1457,12 @@ function formatHistoryMetricLong(entry) {
 }
 
 function renderHistoryLineChart(history) {
-  const width = Math.max(380, history.length * 76 + 84);
-  const height = 216;
-  const paddingLeft = 52;
-  const paddingRight = 18;
-  const paddingTop = 12;
-  const paddingBottom = 56;
+  const width = Math.max(440, history.length * 92 + 92);
+  const height = 248;
+  const paddingLeft = 56;
+  const paddingRight = 24;
+  const paddingTop = 24;
+  const paddingBottom = 84;
   const innerWidth = width - paddingLeft - paddingRight;
   const innerHeight = height - paddingTop - paddingBottom;
   const yTicks = [0, 25, 50, 75, 100];
@@ -1261,6 +1485,7 @@ function renderHistoryLineChart(history) {
   const circles = points
     .map((point, index) => {
       const metric = formatHistoryMetric(point.entry);
+      const pointValueY = point.y <= paddingTop + 14 ? point.y + 18 : point.y - 12;
       const title = escapeSvgText(
         `${point.entry.setName} • ${getSessionModeLabel(point.entry.sessionMode)} • ${formatPercent(
           point.entry.accuracy,
@@ -1274,14 +1499,14 @@ function renderHistoryLineChart(history) {
           <circle class="history-point" cx="${point.x}" cy="${point.y}" r="4.5">
             <title>${title}</title>
           </circle>
-          <text class="history-point-value" x="${point.x}" y="${point.y - 12}" text-anchor="middle">${formatPercent(
+          <text class="history-point-value" x="${point.x}" y="${pointValueY}" text-anchor="middle">${formatPercent(
             point.entry.accuracy,
           )}</text>
-          <text class="history-axis-label history-axis-label-bottom" x="${point.x}" y="${height - 26}" text-anchor="middle">
+          <text class="history-axis-label history-axis-label-bottom" x="${point.x}" y="${height - 40}" text-anchor="middle">
             <tspan x="${point.x}" dy="0">${escapeSvgText(metric.value)}</tspan>
-            <tspan x="${point.x}" dy="13">${escapeSvgText(metric.label)}</tspan>
+            <tspan class="history-axis-label-detail" x="${point.x}" dy="14">${escapeSvgText(metric.label)}</tspan>
+            <tspan class="history-axis-label-session" x="${point.x}" dy="14">S${index + 1}</tspan>
           </text>
-          <text class="history-axis-label history-axis-label-session" x="${point.x}" y="${height - 6}" text-anchor="middle">S${index + 1}</text>
         </g>
       `;
     })
@@ -1307,56 +1532,38 @@ function updateBackButton() {
   elements.backButton.disabled = !canGoBack;
 }
 
-function removeQueuedRetry(answerSnapshot) {
-  const retryIndex = [...state.queue]
-    .map((item, index) => ({ ...item, index }))
-    .reverse()
-    .find(
-      (item) =>
-        item.questionId === answerSnapshot.questionId &&
-        item.retryCount === answerSnapshot.retryCount + 1,
-    )?.index;
-
-  if (typeof retryIndex !== "number") {
-    return;
+function syncNextButton() {
+  if (state.sessionMode === "comprehensive" && state.queue.length === 0 && hasNextComprehensiveGroup()) {
+    elements.nextButton.textContent = "Next Group";
+  } else {
+    elements.nextButton.textContent = state.queue.length === 0 ? "Finish" : "Next";
   }
 
-  state.queue.splice(retryIndex, 1);
-}
-
-function syncNextButton() {
-  elements.nextButton.textContent = state.queue.length === 0 ? "Finish" : "Next";
   elements.nextButton.hidden = false;
 }
 
 function syncSessionChrome() {
   const isQuickLearn = state.sessionMode === "quickLearn";
-  elements.sessionBadge.hidden = !isQuickLearn;
+  const isComprehensive = state.sessionMode === "comprehensive";
+  elements.sessionBadge.hidden = !isQuickLearn && !isComprehensive;
   elements.timerPanel.hidden = !isQuickLearn;
   elements.timerPanel.classList.toggle("is-warning", false);
+  elements.sessionBadge.classList.toggle("pill-quick", isQuickLearn);
   updateSessionActionButtons();
 
   if (isQuickLearn) {
     elements.sessionBadge.textContent = "Quick Learn";
     updateTimerDisplay();
+  } else if (isComprehensive) {
+    elements.sessionBadge.textContent = "Comprehensive";
   }
 }
 
 function updateSessionActionButtons() {
   const inStudyView = !elements.studyView.hidden;
   elements.homeButton.hidden = !inStudyView;
-  elements.swapModeButton.hidden = !inStudyView;
-  elements.swapModeButton.textContent =
-    state.sessionMode === "quickLearn" ? "Switch to Learn" : "Switch to Quick Learn";
-}
-
-function swapSessionMode() {
-  if (elements.studyView.hidden || !elements.deckInput.value.trim()) {
-    return;
-  }
-
-  const nextMode = state.sessionMode === "quickLearn" ? "learn" : "quickLearn";
-  startSessionFromInput({ mode: nextMode });
+  elements.homeButton.textContent = "Return";
+  elements.doneButton.textContent = "Return";
 }
 
 function updateTimerDisplay() {
@@ -1368,6 +1575,22 @@ function updateTimerDisplay() {
   elements.timerPanel.classList.toggle("is-warning", state.timeRemainingSeconds > 0 && state.timeRemainingSeconds <= 30);
 }
 
+function normalizeSessionMode(mode) {
+  if (mode === "quickLearn") {
+    return "quickLearn";
+  }
+
+  if (mode === "comprehensive") {
+    return "comprehensive";
+  }
+
+  return "regular";
+}
+
+function normalizeReturnPath(path, fallback = "./index.html") {
+  return typeof path === "string" && path.trim() ? path.trim() : fallback;
+}
+
 function getQuestionCountLabel() {
   const questionNumber = state.stats.attempts + 1;
 
@@ -1375,7 +1598,17 @@ function getQuestionCountLabel() {
     return `Question ${questionNumber} of ${state.questions.length}`;
   }
 
+  if (state.sessionMode === "comprehensive") {
+    const currentGroup = getCurrentComprehensiveGroup();
+    const currentGroupSize = currentGroup ? currentGroup.questionIds.length : 0;
+    return `Group ${state.currentGroupIndex + 1} • ${getCurrentComprehensiveMasteredCount()} / ${currentGroupSize}`;
+  }
+
   return `Question ${questionNumber}`;
+}
+
+function updateQuestionCountLabel() {
+  elements.questionCount.textContent = getQuestionCountLabel();
 }
 
 function formatTimerValue(totalSeconds) {
@@ -1383,7 +1616,15 @@ function formatTimerValue(totalSeconds) {
 }
 
 function getSessionModeLabel(sessionMode) {
-  return sessionMode === "quickLearn" ? "Quick Learn" : "Learn";
+  if (sessionMode === "quickLearn") {
+    return "Quick Learn";
+  }
+
+  if (sessionMode === "comprehensive") {
+    return "Comprehensive";
+  }
+
+  return "Regular";
 }
 
 function formatClock(totalSeconds) {

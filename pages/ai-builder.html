@@ -72,15 +72,15 @@
               <textarea
                 id="ai-deck-input"
                 spellcheck="false"
-                placeholder="Paste the AI response here. You can also tweak the concept lines, prompt types, or distractors before saving."
+                placeholder="Paste the AI response here. Multiline prompts, concept lines, and prompt bullet lists are all okay before the answer choices begin."
               ></textarea>
 
               <div class="menu-actions">
                 <button id="ai-save-set-button" class="button button-secondary" type="button">
                   Save Set
                 </button>
-                <button id="ai-study-set-button" class="button button-primary" type="button">
-                  Save and Study
+                <button id="ai-study-set-button" class="button button-quick" type="button">
+                  Study
                 </button>
                 <button id="ai-builder-convert-button" class="button button-ghost" type="button">
                   Edit in Builder
@@ -108,13 +108,20 @@
 
                 <p class="guide-copy">
                   Keep the instructions simple: ask for plausible distractors, one marked
-                  correct answer, and blank lines between cards.
+                  correct answer, blank lines between cards, and let the prompt continue over
+                  multiple lines whenever the question needs more structure.
                 </p>
 
                 <p class="guide-copy">
                   If you want to tweak the core cards after import, just use `Edit in Builder`.
                   Exametrics will rebuild the deck into builder cards automatically while keeping
                   the set name, concept lines, prompt direction, term, and definition.
+                </p>
+
+                <p class="guide-copy">
+                  The text reader now treats everything before the first `- * ` answer line as
+                  part of the prompt. That means your AI can use follow-up lines and even `* `
+                  or `- ` bullet points inside the question itself.
                 </p>
               </div>
 
@@ -125,13 +132,27 @@
                 </div>
 
                 <pre><code>Format these as Exametrics cards.
-Propogate each pairing with plausible and closely related answers and concepts.
-Fill in a concept line for each question to help with context.
+Generate plausible and closely related distractors.
+Fill in a concept line for each question when it helps with context.
 Use either "definition:" or "term:" for each prompt.
-Put each answer choice on its own "- " line.
-Mark the correct answer with "- * ".
+You may continue the prompt across multiple lines before the answers begin.
+You may use "* " or "- " for bullet points inside the prompt when helpful.
+Start the answer block with the correct answer marked as "- * ".
+After that, keep each remaining answer choice on its own "- " line.
 Separate cards with one blank line.
 Make the wrong answers plausible but still incorrect.
+
+concept: Testing vs Debugging
+definition: Which two of the following statements best describe the difference between testing and debugging?
+* Testing aims to identify defects
+* Testing aims to identify failures caused by defects
+* Testing aims to assess the quality of the software
+* Debugging aims to find and remove defects
+* Debugging aims to find, analyze, and remove the causes of failures
+- * i and v
+- ii and iv
+- i and iii
+- iii and v
 
 concept: Cellular Respiration
 definition: The powerhouse of the cell.
@@ -139,13 +160,6 @@ definition: The powerhouse of the cell.
 - Nucleus
 - Ribosome
 - Golgi apparatus
-
-concept: Plant Processes
-term: Photosynthesis
-- * The process plants use to convert light energy into chemical energy
-- The division of a cell into two daughter cells
-- The movement of water across a membrane
-- The breakdown of glucose for ATP
 
 concept: Scientific Statements
 definition: Water freezes at 0°C.
@@ -158,7 +172,7 @@ definition: Water freezes at 0°C.
       </main>
 
       <footer class="app-footer">
-        <p class="app-version">Exametrics v0.20</p>
+        <p class="app-version">Exametrics v0.21</p>
       </footer>
     </div>
   </body>

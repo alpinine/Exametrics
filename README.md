@@ -53,18 +53,25 @@ Decks are text-based and separated by blank lines. Each card supports:
 
 - An optional `concept:` or `section:` line
 - A required `term:` or `definition:` prompt line
+- Additional prompt lines before the answers begin
+- Optional `* ` or `- ` bullet lines inside the prompt
 - Two or more answer options
 - Exactly one correct answer marker
 
 Example:
 
 ```text
-concept: Cellular Respiration
-definition: Water freezes at this temperature on the Celsius scale.
-- * 0°C
-- 100°C
-- -10°C
-- 32°C
+concept: Testing vs Debugging
+definition: Which two of the following statements best describe the difference between testing and debugging?
+* Testing aims to identify defects
+* Testing aims to identify failures caused by defects
+* Testing aims to assess the quality of the software
+* Debugging aims to find and remove defects
+* Debugging aims to find, analyze, and remove the causes of failures
+- * i and v
+- ii and iv
+- i and iii
+- iii and v
 ```
 
 Supported correct-answer markers include:
@@ -72,6 +79,8 @@ Supported correct-answer markers include:
 - `- * Correct answer`
 - `- [correct] Correct answer`
 - `- Correct answer *`
+
+The parser treats everything before the first `- * ` or `- [correct] ` line as part of the prompt.
 
 This format is used for imports, exports, and AI-generated deck content.
 

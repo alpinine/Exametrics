@@ -89,11 +89,8 @@
                   <button id="builder-save-set-button" class="button button-secondary" type="button">
                     Save Set
                   </button>
-                  <button id="builder-study-set-button" class="button button-primary" type="button">
-                    Study Now
-                  </button>
-                  <button id="builder-quick-learn-button" class="button button-quick" type="button">
-                    Quick Learn
+                  <button id="builder-study-set-button" class="button button-quick" type="button">
+                    Study
                   </button>
                   <button id="builder-open-set-button" class="button button-ghost" type="button">
                     View Library
@@ -102,12 +99,41 @@
               </div>
 
               <div class="upload-strip upload-strip-emphasis">
-                <label class="button button-primary upload-button upload-wide-button" for="builder-file-input">
-                  Upload Study Set
-                </label>
-                <p class="upload-strip-note">Accepts `.txt` and `.md` files only.</p>
+                <div class="upload-strip-actions">
+                  <label class="button button-primary upload-button upload-wide-button" for="builder-file-input">
+                    Upload Study Set
+                  </label>
+                  <button
+                    id="builder-paste-toggle-button"
+                    class="button button-paste upload-wide-button"
+                    type="button"
+                  >
+                    Paste Study Set
+                  </button>
+                </div>
+                <p class="upload-strip-note">Upload a `.txt` or `.md` file, or paste deck text if you already have it copied.</p>
               </div>
               <input id="builder-file-input" type="file" accept=".txt,.md,text/plain" hidden />
+              <div id="builder-paste-panel" class="paste-import-panel" hidden>
+                <label class="menu-label" for="builder-paste-input">Paste deck text</label>
+                <textarea
+                  id="builder-paste-input"
+                  class="builder-textarea builder-paste-textarea"
+                  rows="9"
+                  placeholder="Paste the full study set text here"
+                ></textarea>
+                <div class="menu-actions">
+                  <button id="builder-paste-import-button" class="button button-paste" type="button">
+                    Load Pasted Set
+                  </button>
+                  <button id="builder-paste-cancel-button" class="button button-ghost" type="button">
+                    Cancel
+                  </button>
+                </div>
+                <p class="upload-strip-note">
+                  Use the same plain-text deck format you would upload from a `.txt` file.
+                </p>
+              </div>
 
               <div class="section-heading section-heading-subtle">
                 <h3>Build manually</h3>
@@ -203,11 +229,8 @@
             Your uploaded set is ready. You can jump straight into studying or stay here and make changes first.
           </p>
           <div class="modal-actions">
-            <button id="upload-choice-study-button" class="button button-primary" type="button">
-              Study Now
-            </button>
-            <button id="upload-choice-quick-button" class="button button-quick" type="button">
-              Quick Learn
+            <button id="upload-choice-study-button" class="button button-quick" type="button">
+              Study
             </button>
             <button id="upload-choice-edit-button" class="button button-ghost" type="button">
               Continue Editing
@@ -217,7 +240,7 @@
       </div>
 
       <footer class="app-footer">
-        <p class="app-version">Exametrics v0.20</p>
+        <p class="app-version">Exametrics v0.21</p>
       </footer>
     </div>
   </body>

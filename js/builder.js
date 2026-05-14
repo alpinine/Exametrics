@@ -1,6 +1,11 @@
 const elements = {
   setNameInput: document.getElementById("builder-set-name-input"),
   fileInput: document.getElementById("builder-file-input"),
+  pasteToggleButton: document.getElementById("builder-paste-toggle-button"),
+  pastePanel: document.getElementById("builder-paste-panel"),
+  pasteInput: document.getElementById("builder-paste-input"),
+  pasteImportButton: document.getElementById("builder-paste-import-button"),
+  pasteCancelButton: document.getElementById("builder-paste-cancel-button"),
   conceptInput: document.getElementById("builder-concept-input"),
   promptTypeSelect: document.getElementById("builder-prompt-type-select"),
   termInput: document.getElementById("builder-term-input"),
@@ -16,12 +21,10 @@ const elements = {
   copySetButton: document.getElementById("builder-copy-set-button"),
   saveSetButton: document.getElementById("builder-save-set-button"),
   studySetButton: document.getElementById("builder-study-set-button"),
-  quickLearnButton: document.getElementById("builder-quick-learn-button"),
   openSetButton: document.getElementById("builder-open-set-button"),
   downloadSetButton: document.getElementById("builder-download-set-button"),
   uploadChoiceModal: document.getElementById("upload-choice-modal"),
   uploadChoiceStudyButton: document.getElementById("upload-choice-study-button"),
-  uploadChoiceQuickButton: document.getElementById("upload-choice-quick-button"),
   uploadChoiceEditButton: document.getElementById("upload-choice-edit-button"),
 };
 
@@ -50,23 +53,20 @@ function bindEvents() {
   elements.form.addEventListener("submit", handleEntrySubmit);
   elements.clearFormButton.addEventListener("click", clearEntryForm);
   elements.fileInput.addEventListener("change", handleDeckUpload);
+  elements.pasteToggleButton.addEventListener("click", togglePastePanel);
+  elements.pasteImportButton.addEventListener("click", handlePasteImport);
+  elements.pasteCancelButton.addEventListener("click", closePastePanel);
   elements.setNameInput.addEventListener("input", handleDraftInputChange);
   elements.conceptInput.addEventListener("input", handleDraftInputChange);
   elements.promptTypeSelect.addEventListener("change", handleDraftInputChange);
   elements.termInput.addEventListener("input", handleDraftInputChange);
   elements.definitionInput.addEventListener("input", handleDraftInputChange);
   elements.saveSetButton.addEventListener("click", handleSaveSet);
-  elements.studySetButton.addEventListener("click", () => handleSaveAndRedirect("study"));
-  elements.quickLearnButton.addEventListener("click", () => handleSaveAndRedirect("quickLearn"));
+  elements.studySetButton.addEventListener("click", handleSaveAndStudy);
   elements.openSetButton.addEventListener("click", handleSaveAndViewLibrary);
   elements.copySetButton.addEventListener("click", handleCopyText);
   elements.downloadSetButton.addEventListener("click", handleDownloadText);
-  elements.uploadChoiceStudyButton.addEventListener("click", () =>
-    handleUploadedDeckChoice("study"),
-  );
-  elements.uploadChoiceQuickButton.addEventListener("click", () =>
-    handleUploadedDeckChoice("quickLearn"),
-  );
+  elements.uploadChoiceStudyButton.addEventListener("click", handleUploadedDeckChoice);
   elements.uploadChoiceEditButton.addEventListener("click", closeUploadChoiceModal);
   elements.uploadChoiceModal.addEventListener("click", (event) => {
     if (event.target === elements.uploadChoiceModal) {
@@ -93,6 +93,7 @@ async function handleDeckUpload(event) {
     state.editingEntryId = null;
     hydrateFromDraft();
     clearEntryForm();
+    closePastePanel({ clearInput: true });
     persistBuilderDraft();
     renderAll();
     showMessage(`Loaded "${file.name}". Choose what you want to do next.`);
@@ -104,6 +105,60 @@ async function handleDeckUpload(event) {
     );
   } finally {
     event.target.value = "";
+  }
+}
+
+function togglePastePanel() {
+  if (elements.pastePanel.hidden) {
+    openPastePanel();
+    return;
+  }
+
+  closePastePanel();
+}
+
+function openPastePanel() {
+  elements.pastePanel.hidden = false;
+  elements.pasteToggleButton.textContent = "Hide Paste Box";
+  elements.pasteInput.focus();
+}
+
+function closePastePanel({ clearInput = false } = {}) {
+  elements.pastePanel.hidden = true;
+  elements.pasteToggleButton.textContent = "Paste Study Set";
+
+  if (clearInput) {
+    elements.pasteInput.value = "";
+  }
+}
+
+function handlePasteImport() {
+  const content = elements.pasteInput.value.trim();
+  if (!content) {
+    showMessage("Paste the study set text before loading it.", true);
+    elements.pasteInput.focus();
+    return;
+  }
+
+  try {
+    const fallbackName = elements.setNameInput.value.trim() || "Pasted Study Set";
+    const builderDraft = RecallLoopStore.createBuilderDraftFromDeck(fallbackName, content);
+
+    state.draft = builderDraft;
+    state.uploadedFileName = "Pasted study set";
+    state.editingEntryId = null;
+    hydrateFromDraft();
+    clearEntryForm();
+    closePastePanel({ clearInput: true });
+    persistBuilderDraft();
+    renderAll();
+    showMessage("Loaded the pasted study set. Choose what you want to do next.");
+    openUploadChoiceModal();
+  } catch (error) {
+    showMessage(
+      error.message || "I couldn't read that text. Check the deck formatting and try again.",
+      true,
+    );
   }
 }
 
@@ -263,7 +318,6 @@ function updateActionButtons() {
 
   elements.saveSetButton.disabled = !canUseGeneratedDeck || !hasName;
   elements.studySetButton.disabled = !canUseGeneratedDeck || !hasName;
-  elements.quickLearnButton.disabled = !canUseGeneratedDeck || !hasName;
   elements.openSetButton.disabled = !canUseGeneratedDeck || !hasName;
   elements.copySetButton.disabled = !canUseGeneratedDeck || !hasName;
   elements.downloadSetButton.disabled = !canUseGeneratedDeck || !hasName;
@@ -307,25 +361,33 @@ function handleSaveSet() {
   showMessage(`Saved "${savedSet.name}" to your local set library.`);
 }
 
-function handleSaveAndRedirect(actionType) {
+async function handleSaveAndStudy() {
   const savedSet = saveGeneratedSet();
   if (!savedSet) {
     return;
   }
 
+  const selectedMode = await RecallLoopStore.promptForStudyMode({
+    title: `Study "${savedSet.name}"`,
+    description: "Choose how you want to work through this set before the session begins.",
+  });
+
+  if (!selectedMode) {
+    showMessage(`Saved "${savedSet.name}". Choose Study again when you're ready.`);
+    return;
+  }
+
   RecallLoopStore.setPendingAction({
-    type: actionType,
+    type: selectedMode,
     setId: savedSet.id,
+    returnPath: "./pages/builder.html",
   });
   window.location.href = "../index.html";
 }
 
-function handleUploadedDeckChoice(actionType) {
+function handleUploadedDeckChoice() {
   closeUploadChoiceModal();
-
-  if (actionType === "study" || actionType === "quickLearn") {
-    handleSaveAndRedirect(actionType);
-  }
+  handleSaveAndStudy();
 }
 
 function handleSaveAndViewLibrary() {

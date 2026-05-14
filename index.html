@@ -53,16 +53,17 @@
                   you delete them, clear browser data, or switch to a different browser, device, or website address.
                 </p>
                 <p class="menu-note">
-                  Even if someone uses the same Safari account on a MacBook and an iPhone, those
-                  devices still keep separate copies here. To move sets over, export them on one
-                  device and import them on the other.
+                  Even if you use the same account or sync service across a phone and a laptop,
+                  each browser usually keeps its own local copy here. To move sets over, export
+                  them from one browser or device and import them into the other.
                 </p>
 
                 <div class="faq-list">
                   <div class="faq-item">
-                    <h3>Why do my sets not show up on my phone?</h3>
+                    <h3>Why do my sets not show up on another device?</h3>
                     <p class="guide-copy">
-                      This app saves sets locally inside each browser, so your phone keeps its own copy.
+                      This app saves sets locally inside each browser, so each phone, laptop, or
+                      browser keeps its own copy.
                     </p>
                   </div>
                   <div class="faq-item">
@@ -116,35 +117,40 @@
             </div>
             <div class="progress-track" aria-hidden="true">
               <div id="progress-fill" class="progress-fill"></div>
+              <div id="progress-segments" class="progress-segments" hidden></div>
             </div>
             <div class="progress-controls">
+              <div class="progress-control-edge">
+                <button id="home-button" class="button button-ghost button-compact" type="button">
+                  Return
+                </button>
+              </div>
               <div class="session-status">
                 <span id="session-badge" class="pill pill-quick" hidden>Quick Learn</span>
                 <div id="timer-panel" class="timer-panel" hidden>
                   <span class="timer-label">Time left</span>
                   <span id="timer-value" class="timer-value">3:00</span>
                 </div>
-                <div class="session-actions">
-                  <button id="swap-mode-button" class="button button-quick button-compact" type="button">
-                    Switch to Quick Learn
-                  </button>
-                  <button id="home-button" class="button button-ghost button-compact" type="button">
-                    Home
-                  </button>
-                </div>
               </div>
-              <label class="toggle-field" for="auto-advance-toggle">
-                <span class="toggle-copy">
-                  <span class="toggle-label">Auto advance</span>
-                  <span id="auto-advance-status" class="toggle-help">
-                    Show feedback briefly, then move on
-                  </span>
-                </span>
-                <span class="toggle-switch">
-                  <input id="auto-advance-toggle" type="checkbox" />
-                  <span class="toggle-slider"></span>
-                </span>
-              </label>
+              <div class="progress-control-edge progress-control-edge-end">
+                <details class="study-settings">
+                  <summary class="study-settings-summary">Settings</summary>
+                  <div class="study-settings-panel">
+                    <label class="toggle-field" for="auto-advance-toggle">
+                      <span class="toggle-copy">
+                        <span class="toggle-label">Auto advance</span>
+                        <span id="auto-advance-status" class="toggle-help">
+                          Show feedback briefly, then move on
+                        </span>
+                      </span>
+                      <span class="toggle-switch">
+                        <input id="auto-advance-toggle" type="checkbox" />
+                        <span class="toggle-slider"></span>
+                      </span>
+                    </label>
+                  </div>
+                </details>
+              </div>
             </div>
           </div>
 
@@ -166,7 +172,7 @@
 
             <p id="concept-label" class="concept-label" hidden></p>
             <p id="prompt-kind-label" class="definition-label">Definition</p>
-            <h2 id="definition-text" class="definition-text"></h2>
+            <div id="definition-text" class="definition-text"></div>
 
             <div id="options-grid" class="options-grid" role="group" aria-label="Answer options"></div>
 
@@ -199,7 +205,7 @@
           <div class="history-header">
             <div class="section-heading">
               <p class="section-kicker">Recent performance</p>
-              <h2 id="history-title">Last 10 Learn sessions</h2>
+              <h2 id="history-title">Last 10 study sessions</h2>
             </div>
             <p id="history-summary" class="history-summary"></p>
           </div>
@@ -209,12 +215,12 @@
           </p>
           <div id="history-chart" class="history-chart" hidden></div>
           <p id="history-note" class="history-note">
-            Score = correct answers divided by total answer attempts. The line runs oldest to newest, with time spent shown for Learn and time left shown for Quick Learn.
+            Score = correct answers divided by total answer attempts. The line runs oldest to newest, with the session time metric shown under each point.
           </p>
         </section>
       </main>
       <footer class="app-footer">
-        <p class="app-version">Exametrics v0.20</p>
+        <p class="app-version">Exametrics v0.21</p>
       </footer>
     </div>
   </body>
