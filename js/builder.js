@@ -13,10 +13,16 @@ const elements = {
   entriesList: document.getElementById("builder-entries-list"),
   previewStatus: document.getElementById("builder-preview-status"),
   previewCode: document.getElementById("builder-preview-code"),
+  copySetButton: document.getElementById("builder-copy-set-button"),
   saveSetButton: document.getElementById("builder-save-set-button"),
   studySetButton: document.getElementById("builder-study-set-button"),
+  quickLearnButton: document.getElementById("builder-quick-learn-button"),
   openSetButton: document.getElementById("builder-open-set-button"),
   downloadSetButton: document.getElementById("builder-download-set-button"),
+  uploadChoiceModal: document.getElementById("upload-choice-modal"),
+  uploadChoiceStudyButton: document.getElementById("upload-choice-study-button"),
+  uploadChoiceQuickButton: document.getElementById("upload-choice-quick-button"),
+  uploadChoiceEditButton: document.getElementById("upload-choice-edit-button"),
 };
 
 const state = {
@@ -25,6 +31,7 @@ const state = {
   editingEntryId: null,
   generatedDeckText: "",
   generationError: "",
+  uploadedFileName: "",
 };
 
 initialize();
@@ -50,8 +57,22 @@ function bindEvents() {
   elements.definitionInput.addEventListener("input", handleDraftInputChange);
   elements.saveSetButton.addEventListener("click", handleSaveSet);
   elements.studySetButton.addEventListener("click", () => handleSaveAndRedirect("study"));
+  elements.quickLearnButton.addEventListener("click", () => handleSaveAndRedirect("quickLearn"));
   elements.openSetButton.addEventListener("click", handleSaveAndViewLibrary);
+  elements.copySetButton.addEventListener("click", handleCopyText);
   elements.downloadSetButton.addEventListener("click", handleDownloadText);
+  elements.uploadChoiceStudyButton.addEventListener("click", () =>
+    handleUploadedDeckChoice("study"),
+  );
+  elements.uploadChoiceQuickButton.addEventListener("click", () =>
+    handleUploadedDeckChoice("quickLearn"),
+  );
+  elements.uploadChoiceEditButton.addEventListener("click", closeUploadChoiceModal);
+  elements.uploadChoiceModal.addEventListener("click", (event) => {
+    if (event.target === elements.uploadChoiceModal) {
+      closeUploadChoiceModal();
+    }
+  });
 }
 
 async function handleDeckUpload(event) {
@@ -68,12 +89,14 @@ async function handleDeckUpload(event) {
     );
 
     state.draft = builderDraft;
+    state.uploadedFileName = file.name;
     state.editingEntryId = null;
     hydrateFromDraft();
     clearEntryForm();
     persistBuilderDraft();
     renderAll();
-    showMessage(`Loaded "${file.name}". You can keep editing it below.`);
+    showMessage(`Loaded "${file.name}". Choose what you want to do next.`);
+    openUploadChoiceModal();
   } catch (error) {
     showMessage(
       error.message || "I couldn't read that file. Try a plain text `.txt` or `.md` deck.",
@@ -224,21 +247,13 @@ function renderGeneratedDeck() {
   state.generationError = "";
 
   if (state.draft.entries.length < 4) {
-    elements.previewStatus.textContent =
-      "Add at least 4 complete cards to generate a full multiple-choice deck.";
-    elements.previewCode.textContent = "";
     return;
   }
 
   try {
     state.generatedDeckText = RecallLoopStore.generateDeckFromBuilderEntries(state.draft.entries);
-    elements.previewStatus.textContent =
-      "This is the exact deck text that will be saved, studied, or downloaded.";
-    elements.previewCode.textContent = state.generatedDeckText;
   } catch (error) {
     state.generationError = error.message;
-    elements.previewStatus.textContent = error.message;
-    elements.previewCode.textContent = "";
   }
 }
 
@@ -248,7 +263,9 @@ function updateActionButtons() {
 
   elements.saveSetButton.disabled = !canUseGeneratedDeck || !hasName;
   elements.studySetButton.disabled = !canUseGeneratedDeck || !hasName;
+  elements.quickLearnButton.disabled = !canUseGeneratedDeck || !hasName;
   elements.openSetButton.disabled = !canUseGeneratedDeck || !hasName;
+  elements.copySetButton.disabled = !canUseGeneratedDeck || !hasName;
   elements.downloadSetButton.disabled = !canUseGeneratedDeck || !hasName;
 }
 
@@ -303,6 +320,14 @@ function handleSaveAndRedirect(actionType) {
   window.location.href = "../index.html";
 }
 
+function handleUploadedDeckChoice(actionType) {
+  closeUploadChoiceModal();
+
+  if (actionType === "study" || actionType === "quickLearn") {
+    handleSaveAndRedirect(actionType);
+  }
+}
+
 function handleSaveAndViewLibrary() {
   const savedSet = saveGeneratedSet();
   if (!savedSet) {
@@ -320,6 +345,24 @@ function handleDownloadText() {
 
   RecallLoopStore.downloadDeckText(elements.setNameInput.value.trim(), state.generatedDeckText);
   showMessage("Downloaded the generated `.txt` deck.");
+}
+
+async function handleCopyText() {
+  if (!ensureGeneratedDeckReady()) {
+    return;
+  }
+
+  if (!navigator.clipboard?.writeText) {
+    showMessage("Clipboard copy isn't available in this browser right now.", true);
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(state.generatedDeckText);
+    showMessage("Copied the generated `.txt` deck to your clipboard.");
+  } catch (error) {
+    showMessage("I couldn't copy the deck text to your clipboard.", true);
+  }
 }
 
 function saveGeneratedSet() {
@@ -343,6 +386,14 @@ function saveGeneratedSet() {
 
   persistBuilderDraft();
   return result.set;
+}
+
+function openUploadChoiceModal() {
+  elements.uploadChoiceModal.hidden = false;
+}
+
+function closeUploadChoiceModal() {
+  elements.uploadChoiceModal.hidden = true;
 }
 
 function ensureGeneratedDeckReady() {

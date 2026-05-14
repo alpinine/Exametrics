@@ -53,6 +53,8 @@ const elements = {
   sessionBadge: document.getElementById("session-badge"),
   timerPanel: document.getElementById("timer-panel"),
   timerValue: document.getElementById("timer-value"),
+  swapModeButton: document.getElementById("swap-mode-button"),
+  homeButton: document.getElementById("home-button"),
   autoAdvanceToggle: document.getElementById("auto-advance-toggle"),
   autoAdvanceStatus: document.getElementById("auto-advance-status"),
   backButton: document.getElementById("back-button"),
@@ -147,6 +149,8 @@ function bindEvents() {
   elements.importSetInput.addEventListener("change", handleSetImport);
   elements.saveSetButton.addEventListener("click", saveCurrentSet);
   elements.exportCurrentSetButton.addEventListener("click", exportCurrentSet);
+  elements.swapModeButton.addEventListener("click", swapSessionMode);
+  elements.homeButton.addEventListener("click", returnToSetup);
   elements.autoAdvanceToggle.addEventListener("change", handleAutoAdvanceToggle);
   elements.backButton.addEventListener("click", goBackOneQuestion);
   elements.nextButton.addEventListener("click", advanceToNextCard);
@@ -934,6 +938,7 @@ function showView(viewName) {
     renderHistoryPanel();
   }
   updateBackButton();
+  updateSessionActionButtons();
 }
 
 function showSetupMessage(message, isError = false) {
@@ -1329,11 +1334,29 @@ function syncSessionChrome() {
   elements.sessionBadge.hidden = !isQuickLearn;
   elements.timerPanel.hidden = !isQuickLearn;
   elements.timerPanel.classList.toggle("is-warning", false);
+  updateSessionActionButtons();
 
   if (isQuickLearn) {
     elements.sessionBadge.textContent = "Quick Learn";
     updateTimerDisplay();
   }
+}
+
+function updateSessionActionButtons() {
+  const inStudyView = !elements.studyView.hidden;
+  elements.homeButton.hidden = !inStudyView;
+  elements.swapModeButton.hidden = !inStudyView;
+  elements.swapModeButton.textContent =
+    state.sessionMode === "quickLearn" ? "Switch to Learn" : "Switch to Quick Learn";
+}
+
+function swapSessionMode() {
+  if (elements.studyView.hidden || !elements.deckInput.value.trim()) {
+    return;
+  }
+
+  const nextMode = state.sessionMode === "quickLearn" ? "learn" : "quickLearn";
+  startSessionFromInput({ mode: nextMode });
 }
 
 function updateTimerDisplay() {
