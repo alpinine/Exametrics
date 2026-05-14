@@ -165,6 +165,16 @@ a {
   gap: 12px;
 }
 
+.builder-heading-row {
+  align-items: center;
+}
+
+.builder-heading-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .section-heading-subtle {
   margin-top: 20px;
   margin-bottom: 12px;
@@ -443,6 +453,32 @@ textarea:focus {
   gap: 24px;
 }
 
+.builder-grid-single {
+  grid-template-columns: 1fr;
+}
+
+.builder-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 6px;
+}
+
+.builder-name-field {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.builder-top-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  flex: 1 1 360px;
+}
+
 .builder-form {
   display: grid;
   gap: 12px;
@@ -477,8 +513,8 @@ textarea:focus {
   margin-bottom: 10px;
 }
 
-.builder-preview {
-  min-height: 260px;
+.builder-inline-guide {
+  margin-top: 18px;
 }
 
 .recent-panel {
@@ -644,9 +680,18 @@ textarea:focus {
   margin-top: 16px;
 }
 
+.upload-strip-emphasis {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(15, 123, 108, 0.08);
+  border: 1px solid rgba(15, 123, 108, 0.14);
+}
+
 .upload-wide-button {
   width: 100%;
   min-height: 54px;
+  font-size: 1.02rem;
 }
 
 .upload-strip-note {
@@ -805,6 +850,12 @@ summary {
   gap: 10px;
 }
 
+.session-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .timer-panel {
   display: inline-flex;
   align-items: center;
@@ -900,6 +951,34 @@ summary {
 
 .toggle-switch input:checked + .toggle-slider::after {
   transform: translateX(22px);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(27, 42, 47, 0.36);
+  backdrop-filter: blur(10px);
+}
+
+.modal-card {
+  width: min(520px, 100%);
+  padding: 26px;
+  border-radius: 24px;
+  background: var(--panel-strong);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: var(--shadow);
+}
+
+.modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
 }
 
 .study-card {
@@ -1349,6 +1428,18 @@ summary {
   .library-toolbar-actions {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .builder-header-row,
+  .builder-top-actions {
+    align-items: stretch;
+  }
+
+  .builder-top-actions,
+  .builder-heading-tools,
+  .session-actions,
+  .modal-actions {
+    width: 100%;
   }
 
   .builder-entry-topline {

@@ -40,24 +40,70 @@
             </div>
           </div>
 
-          <div class="builder-grid">
+          <div class="builder-grid builder-grid-single">
             <section class="editor-panel">
-              <div class="section-heading">
+              <div class="section-heading section-heading-inline builder-heading-row">
                 <h2>Upload or build manually</h2>
+                <div class="builder-heading-tools" aria-label="Deck text tools">
+                  <button
+                    id="builder-copy-set-button"
+                    class="button button-ghost icon-button"
+                    type="button"
+                    aria-label="Copy generated deck text"
+                    title="Copy generated deck text"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <rect x="9" y="9" width="10" height="10" rx="2"></rect>
+                      <path d="M7 15H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  </button>
+                  <button
+                    id="builder-download-set-button"
+                    class="button button-ghost icon-button"
+                    type="button"
+                    aria-label="Download generated deck text"
+                    title="Download generated deck text"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path d="M12 3v10"></path>
+                      <path d="m8 9 4 4 4-4"></path>
+                      <path d="M5 16v3h14v-3"></path>
+                    </svg>
+                  </button>
+                </div>
               </div>
 
-              <label class="menu-label" for="builder-set-name-input">Set name</label>
-              <input
-                id="builder-set-name-input"
-                class="set-name-input"
-                type="text"
-                maxlength="80"
-                placeholder="Name this set"
-              />
+              <div class="builder-header-row">
+                <div class="builder-name-field">
+                  <label class="menu-label" for="builder-set-name-input">Set name</label>
+                  <input
+                    id="builder-set-name-input"
+                    class="set-name-input"
+                    type="text"
+                    maxlength="80"
+                    placeholder="Name this set"
+                  />
+                </div>
 
-              <div class="upload-strip">
-                <label class="button button-secondary upload-button upload-wide-button" for="builder-file-input">
-                  Upload
+                <div class="builder-top-actions">
+                  <button id="builder-save-set-button" class="button button-secondary" type="button">
+                    Save Set
+                  </button>
+                  <button id="builder-study-set-button" class="button button-primary" type="button">
+                    Study Now
+                  </button>
+                  <button id="builder-quick-learn-button" class="button button-secondary" type="button">
+                    Quick Learn
+                  </button>
+                  <button id="builder-open-set-button" class="button button-ghost" type="button">
+                    View Library
+                  </button>
+                </div>
+              </div>
+
+              <div class="upload-strip upload-strip-emphasis">
+                <label class="button button-primary upload-button upload-wide-button" for="builder-file-input">
+                  Upload Study Set
                 </label>
                 <p class="upload-strip-note">Accepts `.txt` and `.md` files only.</p>
               </div>
@@ -112,38 +158,7 @@
               <p id="builder-message" class="setup-message" aria-live="polite"></p>
               <p id="builder-count-note" class="guide-copy builder-count-note"></p>
               <div id="builder-entries-list" class="saved-sets-list"></div>
-            </section>
-
-            <aside class="guide-panel">
-              <div class="guide-card">
-                <div class="section-heading">
-                  <p class="section-kicker">2. Generated deck</p>
-                  <h2>Live `.txt` preview</h2>
-                </div>
-
-                <p id="builder-preview-status" class="guide-copy">
-                  Add at least 4 complete cards to generate a full multiple-choice deck.
-                </p>
-
-                <pre class="builder-preview"><code id="builder-preview-code"></code></pre>
-
-                <div class="menu-actions">
-                  <button id="builder-save-set-button" class="button button-secondary" type="button">
-                    Save Set
-                  </button>
-                  <button id="builder-study-set-button" class="button button-primary" type="button">
-                    Save and Study
-                  </button>
-                  <button id="builder-open-set-button" class="button button-ghost" type="button">
-                    Save and View Library
-                  </button>
-                  <button id="builder-download-set-button" class="button button-ghost" type="button">
-                    Download `.txt`
-                  </button>
-                </div>
-              </div>
-
-              <div class="guide-card">
+              <div class="guide-card builder-inline-guide">
                 <div class="section-heading">
                   <p class="section-kicker">How options work</p>
                   <h2>Auto-fill rules</h2>
@@ -175,10 +190,31 @@
                   four-option multiple choice.
                 </p>
               </div>
-            </aside>
+            </section>
           </div>
         </section>
       </main>
+
+      <div id="upload-choice-modal" class="modal-overlay" hidden>
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="upload-choice-title">
+          <p class="section-kicker">Set loaded</p>
+          <h2 id="upload-choice-title">What would you like to do next?</h2>
+          <p class="guide-copy">
+            Your uploaded set is ready. You can jump straight into studying or stay here and make changes first.
+          </p>
+          <div class="modal-actions">
+            <button id="upload-choice-study-button" class="button button-primary" type="button">
+              Study Now
+            </button>
+            <button id="upload-choice-quick-button" class="button button-secondary" type="button">
+              Quick Learn
+            </button>
+            <button id="upload-choice-edit-button" class="button button-ghost" type="button">
+              Continue Editing
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </body>
 </html>
