@@ -72,6 +72,7 @@ const elements = {
   historyEmpty: document.getElementById("history-empty"),
   historyChart: document.getElementById("history-chart"),
   historyNote: document.getElementById("history-note"),
+  recentSetsList: document.getElementById("recent-sets-list"),
   studyAgainButton: document.getElementById("study-again-button"),
   doneButton: document.getElementById("done-button"),
 };
@@ -121,6 +122,7 @@ function initialize() {
   bindEvents();
   syncAutoAdvancePreference();
   renderHistoryPanel();
+  renderRecentSets();
 
   if (elements.deckInput.value.trim()) {
     setDeckStatus(
@@ -171,11 +173,13 @@ function applyPendingAction() {
   showSetupMessage(`Loaded "${matchingSet.name}" from your set library.`);
 
   if (pendingAction.type === "study") {
+    markSetAsUsed(matchingSet.id);
     startSessionFromInput();
     return;
   }
 
   if (pendingAction.type === "quickLearn") {
+    markSetAsUsed(matchingSet.id);
     startSessionFromInput({ mode: "quickLearn" });
   }
 }
@@ -262,6 +266,10 @@ function syncSetupState() {
 function updatePasteToggleCard() {
   const titleElement = elements.pasteToggleButton.querySelector(".launch-card-title");
   const copyElement = elements.pasteToggleButton.querySelector(".launch-card-copy");
+
+  if (!titleElement || !copyElement) {
+    return;
+  }
 
   if (state.pastePanelOpen) {
     titleElement.textContent = "Hide Raw Editor";
@@ -904,6 +912,8 @@ function restartSession() {
 function returnToSetup() {
   clearAutoAdvanceTimeout();
   clearQuickLearnTimer();
+  state.savedSets = RecallLoopStore.loadSavedSets();
+  renderRecentSets();
   showView("setup");
   showSetupMessage("Ready for another deck.");
 }
@@ -1105,6 +1115,88 @@ function formatSessionTimestamp(isoDate) {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+function renderRecentSets() {
+  if (!elements.recentSetsList) {
+    return;
+  }
+
+  elements.recentSetsList.innerHTML = "";
+  const recentSets = state.savedSets.filter((set) => Boolean(set.lastUsedAt)).slice(0, 2);
+
+  if (recentSets.length === 0) {
+    const emptyState = document.createElement("p");
+    emptyState.className = "recent-empty";
+    emptyState.textContent = "No recent decks yet. Start one from Library and it will show up here.";
+    elements.recentSetsList.appendChild(emptyState);
+    return;
+  }
+
+  recentSets.forEach((set) => {
+    const card = document.createElement("article");
+    card.className = "recent-set-card";
+
+    const copy = document.createElement("div");
+    copy.className = "recent-set-copy";
+
+    const title = document.createElement("h3");
+    title.className = "recent-set-title";
+    title.textContent = set.name;
+
+    const meta = document.createElement("p");
+    meta.className = "saved-set-meta";
+    meta.textContent = `Used ${RecallLoopStore.formatSavedDate(set.lastUsedAt)} • ${RecallLoopStore.countCards(set.content)} cards`;
+
+    copy.append(title, meta);
+
+    const actions = document.createElement("div");
+    actions.className = "recent-set-actions";
+    actions.append(
+      createRecentActionButton("Study", "button button-primary button-compact", () =>
+        launchSavedSet(set.id, "learn"),
+      ),
+      createRecentActionButton("Quick Learn", "button button-secondary button-compact", () =>
+        launchSavedSet(set.id, "quickLearn"),
+      ),
+    );
+
+    card.append(copy, actions);
+    elements.recentSetsList.appendChild(card);
+  });
+}
+
+function createRecentActionButton(label, className, onClick) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = className;
+  button.textContent = label;
+  button.addEventListener("click", onClick);
+  return button;
+}
+
+function launchSavedSet(setId, mode = "learn") {
+  const matchingSet = state.savedSets.find((set) => set.id === setId);
+  if (!matchingSet) {
+    showSetupMessage("That saved set is no longer available on this device.", true);
+    state.savedSets = RecallLoopStore.loadSavedSets();
+    renderRecentSets();
+    return;
+  }
+
+  loadSetIntoEditor(matchingSet, "saved");
+  markSetAsUsed(setId);
+  startSessionFromInput({ mode });
+}
+
+function markSetAsUsed(setId) {
+  const result = RecallLoopStore.touchSetUsage(state.savedSets, setId);
+  if (!result.set || !RecallLoopStore.saveSavedSets(result.sets)) {
+    return;
+  }
+
+  state.savedSets = result.sets;
+  renderRecentSets();
 }
 
 function getSessionElapsedSeconds() {
