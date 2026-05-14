@@ -1,5 +1,6 @@
 const elements = {
   setNameInput: document.getElementById("builder-set-name-input"),
+  fileInput: document.getElementById("builder-file-input"),
   conceptInput: document.getElementById("builder-concept-input"),
   promptTypeSelect: document.getElementById("builder-prompt-type-select"),
   termInput: document.getElementById("builder-term-input"),
@@ -41,6 +42,7 @@ function hydrateFromDraft() {
 function bindEvents() {
   elements.form.addEventListener("submit", handleEntrySubmit);
   elements.clearFormButton.addEventListener("click", clearEntryForm);
+  elements.fileInput.addEventListener("change", handleDeckUpload);
   elements.setNameInput.addEventListener("input", handleDraftInputChange);
   elements.conceptInput.addEventListener("input", handleDraftInputChange);
   elements.promptTypeSelect.addEventListener("change", handleDraftInputChange);
@@ -48,8 +50,38 @@ function bindEvents() {
   elements.definitionInput.addEventListener("input", handleDraftInputChange);
   elements.saveSetButton.addEventListener("click", handleSaveSet);
   elements.studySetButton.addEventListener("click", () => handleSaveAndRedirect("study"));
-  elements.openSetButton.addEventListener("click", () => handleSaveAndRedirect("load"));
+  elements.openSetButton.addEventListener("click", handleSaveAndViewLibrary);
   elements.downloadSetButton.addEventListener("click", handleDownloadText);
+}
+
+async function handleDeckUpload(event) {
+  const [file] = event.target.files;
+  if (!file) {
+    return;
+  }
+
+  try {
+    const content = await file.text();
+    const builderDraft = RecallLoopStore.createBuilderDraftFromDeck(
+      RecallLoopStore.stripFileExtension(file.name),
+      content,
+    );
+
+    state.draft = builderDraft;
+    state.editingEntryId = null;
+    hydrateFromDraft();
+    clearEntryForm();
+    persistBuilderDraft();
+    renderAll();
+    showMessage(`Loaded "${file.name}". You can keep editing it below.`);
+  } catch (error) {
+    showMessage(
+      error.message || "I couldn't read that file. Try a plain text `.txt` or `.md` deck.",
+      true,
+    );
+  } finally {
+    event.target.value = "";
+  }
 }
 
 function handleEntrySubmit(event) {
@@ -269,6 +301,16 @@ function handleSaveAndRedirect(actionType) {
     setId: savedSet.id,
   });
   window.location.href = "../index.html";
+}
+
+function handleSaveAndViewLibrary() {
+  const savedSet = saveGeneratedSet();
+  if (!savedSet) {
+    return;
+  }
+
+  showMessage(`Saved "${savedSet.name}" to your local set library.`);
+  window.location.href = "./library.html";
 }
 
 function handleDownloadText() {

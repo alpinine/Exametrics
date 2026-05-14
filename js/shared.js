@@ -58,7 +58,9 @@ const RecallLoopStore = (() => {
       }
 
       const parsedSets = JSON.parse(rawSets);
-      return Array.isArray(parsedSets) ? sortSavedSets(parsedSets.filter(isValidSavedSet)) : [];
+      return Array.isArray(parsedSets)
+        ? sortSavedSets(parsedSets.filter(isValidSavedSet).map(normalizeSavedSet))
+        : [];
     } catch (error) {
       console.warn("Unable to load saved sets.", error);
       return [];
@@ -67,7 +69,10 @@ const RecallLoopStore = (() => {
 
   function saveSavedSets(sets) {
     try {
-      window.localStorage.setItem(savedSetsStorageKey, JSON.stringify(sortSavedSets(sets)));
+      window.localStorage.setItem(
+        savedSetsStorageKey,
+        JSON.stringify(sortSavedSets(sets).map(normalizeSavedSet)),
+      );
       return true;
     } catch (error) {
       console.warn("Unable to persist saved sets.", error);
@@ -146,7 +151,7 @@ const RecallLoopStore = (() => {
     let savedSet;
     if (existingIndex >= 0) {
       savedSet = {
-        ...sets[existingIndex],
+        ...normalizeSavedSet(sets[existingIndex]),
         name,
         content,
         updatedAt,
@@ -158,6 +163,8 @@ const RecallLoopStore = (() => {
         name,
         content,
         updatedAt,
+        lastUsedAt:
+          typeof incomingSet.lastUsedAt === "string" ? incomingSet.lastUsedAt : "",
       };
       sets.unshift(savedSet);
     }
@@ -173,6 +180,23 @@ const RecallLoopStore = (() => {
     return {
       sets: existingSets.filter((set) => set.id !== setId),
       deletedSet,
+    };
+  }
+
+  function touchSetUsage(existingSets, setId, usedAt = new Date().toISOString()) {
+    const sets = existingSets.map((set) =>
+      set.id === setId
+        ? {
+            ...normalizeSavedSet(set),
+            lastUsedAt: usedAt,
+          }
+        : normalizeSavedSet(set),
+    );
+    const updatedSet = sets.find((set) => set.id === setId) || null;
+
+    return {
+      sets: sortSavedSets(sets),
+      set: updatedSet,
     };
   }
 
@@ -679,6 +703,16 @@ const RecallLoopStore = (() => {
     );
   }
 
+  function normalizeSavedSet(set) {
+    return {
+      id: set.id,
+      name: set.name,
+      content: set.content,
+      updatedAt: set.updatedAt,
+      lastUsedAt: typeof set.lastUsedAt === "string" ? set.lastUsedAt : "",
+    };
+  }
+
   function isValidAttemptHistoryEntry(candidate) {
     return (
       candidate &&
@@ -724,7 +758,13 @@ const RecallLoopStore = (() => {
   }
 
   function sortSavedSets(sets) {
-    return [...sets].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+    return [...sets]
+      .map(normalizeSavedSet)
+      .sort((left, right) => getSetSortTimestamp(right).localeCompare(getSetSortTimestamp(left)));
+  }
+
+  function getSetSortTimestamp(set) {
+    return set.lastUsedAt || set.updatedAt;
   }
 
   function createSetId() {
@@ -770,6 +810,7 @@ const RecallLoopStore = (() => {
     setPendingAction,
     consumePendingAction,
     stripFileExtension,
+    touchSetUsage,
     upsertSet,
   };
 })();

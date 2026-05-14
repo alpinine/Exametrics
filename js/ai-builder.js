@@ -56,7 +56,7 @@ function bindEvents() {
   elements.saveSetButton.addEventListener("click", () => saveCurrentSet());
   elements.studySetButton.addEventListener("click", () => saveCurrentSet("study"));
   elements.builderConvertButton.addEventListener("click", openCurrentDeckInBuilder);
-  elements.openSetButton.addEventListener("click", () => saveCurrentSet("load"));
+  elements.openSetButton.addEventListener("click", saveCurrentSetAndViewLibrary);
 }
 
 function handleDraftInput() {
@@ -138,10 +138,11 @@ function saveCurrentSet(actionType = "") {
       setId: result.set.id,
     });
     window.location.href = "../index.html";
-    return;
+    return result.set;
   }
 
   showMessage(`Saved "${result.set.name}" to your local set library.`);
+  return result.set;
 }
 
 function openCurrentDeckInBuilder() {
@@ -161,6 +162,16 @@ function openCurrentDeckInBuilder() {
   } catch (error) {
     showMessage(`I couldn't open that deck in the builder yet: ${error.message}`, true);
   }
+}
+
+function saveCurrentSetAndViewLibrary() {
+  const savedSet = saveCurrentSet();
+  if (!savedSet) {
+    return;
+  }
+
+  showMessage(`Saved "${savedSet.name}" to your local set library.`);
+  window.location.href = "./library.html";
 }
 
 function showMessage(message, isError = false) {

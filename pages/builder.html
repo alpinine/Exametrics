@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Exametrics Builder</title>
+    <title>Exametrics New Set</title>
     <meta name="theme-color" content="#0f7b6c" />
     <meta
       name="description"
-      content="Build study sets one card at a time and let Exametrics generate the formatted deck for you."
+      content="Upload a deck or build one card by card, then save it into Exametrics."
     />
     <link rel="icon" href="../assets/icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="../manifest.webmanifest" />
@@ -18,10 +18,10 @@
   <body>
     <div class="app-shell">
       <header class="hero">
-        <p class="eyebrow">Guided set creation</p>
-        <h1>Exametrics Builder</h1>
+        <p class="eyebrow">Create something new</p>
+        <h1>New Set</h1>
         <p class="hero-copy">
-          Add one term-definition pair at a time, choose whether each card shows the term or the definition, and let the app build the final deck text for you automatically.
+          Upload a text deck or build one card at a time, then let Exametrics generate the final study set for you automatically.
         </p>
       </header>
 
@@ -29,22 +29,21 @@
         <section class="builder-page">
           <div class="library-toolbar">
             <div class="section-heading">
-              <p class="section-kicker">Build locally</p>
-              <h2>Create a study set without touching raw `.txt`</h2>
+              <h2>Create a study set</h2>
             </div>
 
             <div class="library-toolbar-actions">
-              <a href="../index.html" class="button button-primary button-link">Back to Study Page</a>
-              <a href="./ai-builder.html" class="button button-ghost button-link">Open AI Set Builder</a>
-              <a href="./library.html" class="button button-ghost button-link">Open Set Library</a>
+              <a href="../index.html" class="button button-primary button-link">Home</a>
+              <a href="./library.html" class="button button-ghost button-link">Library</a>
+              <a href="./ai-builder.html" class="button button-ghost button-link">AI Set Instructions</a>
+              <a href="./transfer.html" class="button button-ghost button-link">Import/Export</a>
             </div>
           </div>
 
           <div class="builder-grid">
             <section class="editor-panel">
               <div class="section-heading">
-                <p class="section-kicker">1. Add cards</p>
-                <h2>Build one pair at a time</h2>
+                <h2>Upload or build manually</h2>
               </div>
 
               <label class="menu-label" for="builder-set-name-input">Set name</label>
@@ -55,6 +54,18 @@
                 maxlength="80"
                 placeholder="Name this set"
               />
+
+              <div class="upload-strip">
+                <label class="button button-secondary upload-button upload-wide-button" for="builder-file-input">
+                  Upload
+                </label>
+                <p class="upload-strip-note">Accepts `.txt` and `.md` files only.</p>
+              </div>
+              <input id="builder-file-input" type="file" accept=".txt,.md,text/plain" hidden />
+
+              <div class="section-heading section-heading-subtle">
+                <h3>Build manually</h3>
+              </div>
 
               <form id="builder-form" class="builder-form">
                 <label class="menu-label" for="builder-concept-input">Concept or section</label>
@@ -124,7 +135,7 @@
                     Save and Study
                   </button>
                   <button id="builder-open-set-button" class="button button-ghost" type="button">
-                    Save and Open
+                    Save and View Library
                   </button>
                   <button id="builder-download-set-button" class="button button-ghost" type="button">
                     Download `.txt`

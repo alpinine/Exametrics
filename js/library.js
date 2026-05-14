@@ -1,5 +1,4 @@
 const elements = {
-  importInput: document.getElementById("library-import-input"),
   message: document.getElementById("library-message"),
   list: document.getElementById("library-list"),
 };
@@ -12,34 +11,7 @@ initialize();
 
 function initialize() {
   state.savedSets = RecallLoopStore.loadSavedSets();
-  elements.importInput.addEventListener("change", handleLibraryImport);
   renderLibrary();
-}
-
-async function handleLibraryImport(event) {
-  const [file] = event.target.files;
-  if (!file) {
-    return;
-  }
-
-  try {
-    const importedSet = await RecallLoopStore.importSetFile(file);
-    RecallLoopStore.parseDeck(importedSet.content);
-    const result = RecallLoopStore.upsertSet(state.savedSets, importedSet);
-    state.savedSets = result.sets;
-
-    if (!RecallLoopStore.saveSavedSets(state.savedSets)) {
-      showMessage("This browser couldn't save the imported set locally.", true);
-      return;
-    }
-
-    renderLibrary();
-    showMessage(`Imported and saved "${result.set.name}".`);
-  } catch (error) {
-    showMessage(error.message || "I couldn't import that set file.", true);
-  } finally {
-    event.target.value = "";
-  }
 }
 
 function renderLibrary() {
@@ -50,7 +22,7 @@ function renderLibrary() {
     emptyState.className = "library-empty";
     emptyState.innerHTML = `
       <p class="section-kicker">No saved sets yet</p>
-      <h2>Import a set or save one from the study page.</h2>
+      <h2>Create a set from New or bring one in from Import/Export.</h2>
       <p class="guide-copy">
         Everything here stays local to this browser unless you export it yourself.
       </p>
@@ -72,7 +44,7 @@ function renderLibrary() {
 
     const meta = document.createElement("p");
     meta.className = "saved-set-meta";
-    meta.textContent = `Saved ${RecallLoopStore.formatSavedDate(set.updatedAt)} • ${RecallLoopStore.countCards(set.content)} cards`;
+    meta.textContent = formatSetMeta(set);
 
     copy.append(title, meta);
 
@@ -97,6 +69,17 @@ function renderLibrary() {
     card.append(copy, actions);
     elements.list.appendChild(card);
   });
+}
+
+function formatSetMeta(set) {
+  const totalCards = RecallLoopStore.countCards(set.content);
+  const cardCount = `${totalCards} card${totalCards === 1 ? "" : "s"}`;
+
+  if (set.lastUsedAt) {
+    return `Used ${RecallLoopStore.formatSavedDate(set.lastUsedAt)} • ${cardCount}`;
+  }
+
+  return `Saved ${RecallLoopStore.formatSavedDate(set.updatedAt)} • ${cardCount}`;
 }
 
 function createActionButton(label, className, onClick) {

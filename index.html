@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta
       name="description"
-      content="A lightweight study app for working through definition-based multiple choice decks."
+      content="A lightweight study app for building, importing, and studying multiple-choice decks."
     />
     <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="manifest.webmanifest" />
@@ -22,136 +22,88 @@
         <p class="eyebrow">Fast exam prep</p>
         <h1>Exametrics</h1>
         <p class="hero-copy">
-          Upload or paste a deck, then study one card at a time:
-          correct answers leave the queue, missed answers come back around.
+          Build a set, bring one in, or jump back into a recent deck.
+          Study one card at a time, clear what you know, and recycle what you miss.
         </p>
       </header>
 
       <main class="main-panel">
         <section id="setup-view" class="view">
-          <div class="setup-grid setup-grid-single">
-            <section class="editor-panel">
-              <div class="section-heading">
-                <p class="section-kicker">1. Choose a starting point</p>
-                <h2>Build in the app, upload a deck, or bring one in from AI</h2>
+          <div class="home-dashboard">
+            <div class="home-actions-grid" aria-label="Main navigation">
+              <a href="pages/library.html" class="home-action-button">Library</a>
+              <a href="pages/builder.html" class="home-action-button">New</a>
+              <a href="pages/ai-builder.html" class="home-action-button">AI Set Instructions</a>
+              <a href="pages/transfer.html" class="home-action-button">Import/Export</a>
+            </div>
+
+            <section class="editor-panel recent-panel">
+              <div class="section-heading section-heading-inline">
+                <h2>Recent Decks</h2>
               </div>
+              <div id="recent-sets-list" class="recent-sets-list"></div>
+            </section>
 
-              <div class="launcher-grid">
-                <a href="pages/ai-builder.html" class="launch-card launch-card-link">
-                  <span class="launch-card-title">Open AI Set Builder</span>
-                  <span class="launch-card-copy">
-                    Get the AI prompt, tips, examples, and a dedicated place to paste or upload AI-made decks.
-                  </span>
-                </a>
+            <details class="tool-menu">
+              <summary>Storage Disclaimer</summary>
 
-                <button id="paste-toggle-button" class="launch-card" type="button">
-                  <span class="launch-card-title">Edit Raw Deck Text</span>
-                  <span class="launch-card-copy">
-                    Open the plain text editor when you want to hand-edit a deck directly.
-                  </span>
-                </button>
-
-                <label class="launch-card launch-card-label" for="file-input">
-                  <span class="launch-card-title">Upload Text File</span>
-                  <span class="launch-card-copy">
-                    Load a pre-made `.txt` or `.md` deck and save it to this browser right away.
-                  </span>
-                </label>
-                <input id="file-input" type="file" accept=".txt,.md,text/plain" hidden />
-
-                <a href="pages/builder.html" class="launch-card launch-card-link">
-                  <span class="launch-card-title">Open Set Builder</span>
-                  <span class="launch-card-copy">
-                    Create a set card by card without touching the raw text format.
-                  </span>
-                </a>
-
-                <a href="pages/library.html" class="launch-card launch-card-link">
-                  <span class="launch-card-title">Open Set Library</span>
-                  <span class="launch-card-copy">
-                    Browse every saved set on this device and jump back into studying.
-                  </span>
-                </a>
-              </div>
-
-              <div id="deck-status-card" class="deck-status-card">
-                <p class="section-kicker">Current deck</p>
-                <h3 id="deck-status-title">Nothing loaded yet</h3>
-                <p id="deck-status-detail" class="guide-copy">
-                  Upload a deck, build one inside the app, or open the text editor if you want
-                  to paste in an AI-made set.
+              <div class="tool-menu-panel storage-panel">
+                <p class="menu-note">
+                  Your sets are saved in this browser on this device. They usually stay there until
+                  you delete them, clear browser data, or switch to a different browser, device, or website address.
                 </p>
-              </div>
+                <p class="menu-note">
+                  Even if someone uses the same Safari account on a MacBook and an iPhone, those
+                  devices still keep separate copies here. To move sets over, export them on one
+                  device and import them on the other.
+                </p>
 
-              <section id="paste-panel" class="deck-input-panel" hidden>
-                <div class="panel-inline-heading">
-                  <div>
-                    <p class="section-kicker">Raw deck text</p>
-                    <h3>Paste a pre-made set or edit the current one</h3>
+                <div class="faq-list">
+                  <div class="faq-item">
+                    <h3>Why do my sets not show up on my phone?</h3>
+                    <p class="guide-copy">
+                      This app saves sets locally inside each browser, so your phone keeps its own copy.
+                    </p>
                   </div>
-                  <button id="sample-button" class="button button-ghost" type="button">
-                    Use Sample Deck
-                  </button>
+                  <div class="faq-item">
+                    <h3>How do I move sets to another device or browser?</h3>
+                    <p class="guide-copy">
+                      Go to `Import/Export`, export the set as a file, then import that file on the other device or browser.
+                    </p>
+                  </div>
+                  <div class="faq-item">
+                    <h3>How long do sets stay saved?</h3>
+                    <p class="guide-copy">
+                      They usually stay there until you remove them, clear site data, or stop using that browser on that device.
+                    </p>
+                  </div>
                 </div>
+              </div>
+            </details>
 
-                <label class="sr-only" for="deck-input">Study deck text</label>
-                <textarea
-                  id="deck-input"
-                  spellcheck="false"
-                  placeholder="Paste your deck here when you want to use a pre-made AI or text deck."
-                ></textarea>
+            <section class="legacy-store" hidden aria-hidden="true">
+              <button id="paste-toggle-button" type="button"></button>
+              <div id="deck-status-card">
+                <h3 id="deck-status-title"></h3>
+                <p id="deck-status-detail"></p>
+              </div>
+              <section id="paste-panel" hidden>
+                <button id="sample-button" type="button"></button>
+                <textarea id="deck-input" spellcheck="false"></textarea>
               </section>
-
-              <div class="save-row">
-                <label class="sr-only" for="set-name-input">Set name</label>
-                <input
-                  id="set-name-input"
-                  class="set-name-input"
-                  type="text"
-                  maxlength="80"
-                  placeholder="Set name for saving on this device"
-                />
-                <button id="save-set-button" class="button button-secondary" type="button">
-                  Save Set
-                </button>
-              </div>
-
-              <div class="setup-actions">
-                <button id="start-button" class="button button-primary" type="button">
-                  Start Studying
-                </button>
-                <button id="edit-builder-button" class="button button-ghost" type="button">
-                  Edit in Builder
-                </button>
-              </div>
-
-              <details id="set-tools-menu" class="tool-menu">
-                <summary>Import or Export</summary>
-
-                <div class="tool-menu-panel">
-                  <div class="menu-actions">
-                    <label class="button button-secondary upload-button" for="import-set-input">
-                      Import Study Set
-                    </label>
-                    <button id="export-current-set-button" class="button button-ghost" type="button">
-                      Export Current Set
-                    </button>
-                  </div>
-
-                  <p class="menu-note">
-                    Imported sets save directly into this browser. Exporting downloads a `.txt`
-                    copy you can move to another device later.
-                  </p>
-                </div>
-              </details>
+              <input id="set-name-input" type="text" maxlength="80" />
+              <input id="file-input" type="file" accept=".txt,.md,text/plain" />
+              <button id="save-set-button" type="button"></button>
+              <button id="start-button" type="button"></button>
+              <button id="edit-builder-button" type="button"></button>
+              <details id="set-tools-menu"></details>
+              <button id="export-current-set-button" type="button"></button>
               <input
                 id="import-set-input"
                 type="file"
                 accept=".json,.txt,.md,application/json,text/plain"
-                hidden
               />
-
-              <p id="setup-message" class="setup-message" aria-live="polite"></p>
+              <p id="setup-message" aria-live="polite"></p>
             </section>
           </div>
         </section>
