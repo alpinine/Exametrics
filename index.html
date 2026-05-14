@@ -120,35 +120,37 @@
               <div id="progress-segments" class="progress-segments" hidden></div>
             </div>
             <div class="progress-controls">
+              <div class="progress-control-edge">
+                <button id="home-button" class="button button-ghost button-compact" type="button">
+                  Return
+                </button>
+              </div>
               <div class="session-status">
                 <span id="session-badge" class="pill pill-quick" hidden>Quick Learn</span>
                 <div id="timer-panel" class="timer-panel" hidden>
                   <span class="timer-label">Time left</span>
                   <span id="timer-value" class="timer-value">3:00</span>
                 </div>
-                <div class="session-actions">
-                  <button id="home-button" class="button button-ghost button-compact" type="button">
-                    Return
-                  </button>
-                </div>
               </div>
-              <details class="study-settings">
-                <summary class="study-settings-summary">Settings</summary>
-                <div class="study-settings-panel">
-                  <label class="toggle-field" for="auto-advance-toggle">
-                    <span class="toggle-copy">
-                      <span class="toggle-label">Auto advance</span>
-                      <span id="auto-advance-status" class="toggle-help">
-                        Show feedback briefly, then move on
+              <div class="progress-control-edge progress-control-edge-end">
+                <details class="study-settings">
+                  <summary class="study-settings-summary">Settings</summary>
+                  <div class="study-settings-panel">
+                    <label class="toggle-field" for="auto-advance-toggle">
+                      <span class="toggle-copy">
+                        <span class="toggle-label">Auto advance</span>
+                        <span id="auto-advance-status" class="toggle-help">
+                          Show feedback briefly, then move on
+                        </span>
                       </span>
-                    </span>
-                    <span class="toggle-switch">
-                      <input id="auto-advance-toggle" type="checkbox" />
-                      <span class="toggle-slider"></span>
-                    </span>
-                  </label>
-                </div>
-              </details>
+                      <span class="toggle-switch">
+                        <input id="auto-advance-toggle" type="checkbox" />
+                        <span class="toggle-slider"></span>
+                      </span>
+                    </label>
+                  </div>
+                </details>
+              </div>
             </div>
           </div>
 
@@ -218,7 +220,7 @@
         </section>
       </main>
       <footer class="app-footer">
-        <p class="app-version">Exametrics v0.20</p>
+        <p class="app-version">Exametrics v0.21</p>
       </footer>
     </div>
   </body>

@@ -611,13 +611,14 @@ function resetSessionState() {
 function advanceToNextCard() {
   clearAutoAdvanceTimeout();
 
-  if (state.queue.length === 0) {
+  while (state.queue.length === 0) {
     if (state.sessionMode === "comprehensive" && moveToNextComprehensiveGroup()) {
       renderProgress();
-    } else {
-      finishSession();
-      return;
+      continue;
     }
+
+    finishSession();
+    return;
   }
 
   state.currentItem = state.queue.shift();
@@ -638,7 +639,7 @@ function renderCurrentCard() {
   const shouldShowRetry =
     state.sessionMode === "regular" && Number(state.currentItem?.retryCount ?? 0) > 0;
 
-  elements.questionCount.textContent = getQuestionCountLabel();
+  updateQuestionCountLabel();
   elements.retryPill.hidden = !shouldShowRetry;
   elements.retryPill.style.display = shouldShowRetry ? "inline-flex" : "none";
   elements.conceptLabel.hidden = !state.currentQuestion.concept;
@@ -756,15 +757,11 @@ function handleAnswer(selectedIndex) {
         requeueCurrentItemRandomly();
       }
     } else {
+      questionJustMastered = true;
       state.masteredIds.add(currentQuestionId);
     }
 
-    elements.feedbackText.textContent = getCorrectFeedback({
-      retryCount: state.currentItem.retryCount,
-      questionJustMastered,
-      currentStreak,
-    });
-    elements.feedbackText.classList.add("success");
+    showAnswerFeedback(questionJustMastered);
   } else {
     state.stats.misses += 1;
 
@@ -778,9 +775,7 @@ function handleAnswer(selectedIndex) {
       requeueCurrentItemRandomly();
     }
 
-    const correctAnswer = state.currentQuestion.options[correctIndex].text;
-    elements.feedbackText.textContent = getIncorrectFeedback(correctAnswer);
-    elements.feedbackText.classList.add("error");
+    showAnswerFeedback(false);
   }
 
   if (isSessionComplete()) {
@@ -791,6 +786,7 @@ function handleAnswer(selectedIndex) {
     }
   }
 
+  updateQuestionCountLabel();
   renderProgress();
   updateBackButton();
 
@@ -803,67 +799,14 @@ function handleAnswer(selectedIndex) {
   syncNextButton();
 }
 
-function getCorrectFeedback({ retryCount = 0, questionJustMastered = false, currentStreak = 0 } = {}) {
-  if (state.sessionMode === "quickLearn") {
-    return state.autoAdvanceEnabled
-      ? "Correct. Moving to the next question..."
-      : "Correct.";
+function showAnswerFeedback(questionJustMastered) {
+  elements.feedbackText.className = "feedback-text";
+  const shouldCelebrate = state.sessionMode === "comprehensive" && questionJustMastered;
+  elements.feedbackText.textContent = shouldCelebrate ? "Mastered!" : "";
+
+  if (shouldCelebrate) {
+    elements.feedbackText.classList.add("mastered");
   }
-
-  if (state.sessionMode === "comprehensive") {
-    const currentGroupNumber = state.currentGroupIndex + 1;
-    const nextGroupNumber = currentGroupNumber + 1;
-
-    if (questionJustMastered && state.queue.length === 0 && hasNextComprehensiveGroup()) {
-      return state.autoAdvanceEnabled
-        ? `Correct again. Group ${currentGroupNumber} is mastered. Moving to Group ${nextGroupNumber}...`
-        : `Correct again. Group ${currentGroupNumber} is mastered.`;
-    }
-
-    if (questionJustMastered) {
-      return state.autoAdvanceEnabled
-        ? "Correct again. That card is mastered. Moving to the next card..."
-        : "Correct again. That card is mastered.";
-    }
-
-    if (currentStreak === 1) {
-      return state.autoAdvanceEnabled
-        ? "Correct. Get this card right one more time to master it, then we'll move on."
-        : "Correct. Get this card right one more time to master it.";
-    }
-
-    return state.autoAdvanceEnabled ? "Correct. Moving on..." : "Correct.";
-  }
-
-  if (state.autoAdvanceEnabled) {
-    return retryCount > 0
-      ? "Correct. That retry card is now cleared. Moving to the next card..."
-      : "Correct. This card leaves the queue. Moving to the next card...";
-  }
-
-  return retryCount > 0
-    ? "Correct. That retry card is now cleared."
-    : "Correct. This card leaves the queue.";
-}
-
-function getIncorrectFeedback(correctAnswer) {
-  if (state.sessionMode === "quickLearn") {
-    return state.autoAdvanceEnabled
-      ? `Not quite. The correct answer is "${correctAnswer}". Moving to the next question...`
-      : `Not quite. The correct answer is "${correctAnswer}".`;
-  }
-
-  if (state.sessionMode === "comprehensive") {
-    return state.autoAdvanceEnabled
-      ? `Not quite. The correct answer is "${correctAnswer}". This card's streak resets, then we'll move on.`
-      : `Not quite. The correct answer is "${correctAnswer}". This card's streak resets.`;
-  }
-
-  if (state.autoAdvanceEnabled) {
-    return `Not quite. The correct answer is "${correctAnswer}". You'll see this card again, then we'll move on.`;
-  }
-
-  return `Not quite. The correct answer is "${correctAnswer}". You'll see this card again.`;
 }
 
 function renderProgress() {
@@ -949,7 +892,7 @@ function buildComprehensiveGroups(questions) {
     return [];
   }
 
-  const groupCount = Math.max(1, Math.ceil(questions.length / 20));
+  const groupCount = 3;
   const baseSize = Math.floor(questions.length / groupCount);
   const remainder = questions.length % groupCount;
   const groups = [];
@@ -982,8 +925,18 @@ function getCurrentComprehensiveMasteredCount() {
   ).length;
 }
 
+function getNextComprehensiveGroupIndex() {
+  for (let index = state.currentGroupIndex + 1; index < state.comprehensiveGroups.length; index += 1) {
+    if ((state.comprehensiveGroups[index]?.questionIds.length || 0) > 0) {
+      return index;
+    }
+  }
+
+  return -1;
+}
+
 function hasNextComprehensiveGroup() {
-  return state.currentGroupIndex < state.comprehensiveGroups.length - 1;
+  return getNextComprehensiveGroupIndex() >= 0;
 }
 
 function moveToNextComprehensiveGroup() {
@@ -991,7 +944,7 @@ function moveToNextComprehensiveGroup() {
     return false;
   }
 
-  state.currentGroupIndex += 1;
+  state.currentGroupIndex = getNextComprehensiveGroupIndex();
   state.queue = buildQuestionQueue(getCurrentComprehensiveGroupQuestionIds());
   return true;
 }
@@ -1652,6 +1605,10 @@ function getQuestionCountLabel() {
   }
 
   return `Question ${questionNumber}`;
+}
+
+function updateQuestionCountLabel() {
+  elements.questionCount.textContent = getQuestionCountLabel();
 }
 
 function formatTimerValue(totalSeconds) {

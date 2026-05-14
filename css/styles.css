@@ -1,4 +1,5 @@
 :root {
+  color-scheme: light;
   --bg-top: #fff5d6;
   --bg-bottom: #f4f0e8;
   --panel: rgba(255, 252, 244, 0.92);
@@ -911,17 +912,27 @@ summary {
 
 .progress-controls {
   position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  justify-content: space-between;
   gap: 14px;
   margin-top: 14px;
+}
+
+.progress-control-edge {
+  display: flex;
+  align-items: center;
+}
+
+.progress-control-edge-end {
+  justify-content: flex-end;
 }
 
 .session-status {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 10px;
 }
 
@@ -992,12 +1003,16 @@ summary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 42px;
-  padding: 10px 16px;
+  min-height: 0;
+  padding: 10px 14px;
   border-radius: 999px;
   background: rgba(27, 42, 47, 0.06);
   border: 1px solid rgba(27, 42, 47, 0.1);
   color: var(--accent-dark);
+  font-size: 0.94rem;
+  font-weight: 700;
+  line-height: 1.55;
+  cursor: pointer;
 }
 
 .study-settings-summary::-webkit-details-marker {
@@ -1669,9 +1684,21 @@ summary {
   }
 
   .progress-controls {
+    grid-template-columns: 1fr;
     align-items: flex-start;
+    justify-items: stretch;
+  }
+
+  .progress-control-edge {
+    width: 100%;
+  }
+
+  .progress-control-edge-end {
+    justify-content: flex-end;
+  }
+
+  .session-status {
     justify-content: flex-start;
-    flex-direction: column;
   }
 
   .toggle-copy {
@@ -1759,4 +1786,196 @@ summary {
   color: var(--muted);
   font-size: 0.85rem;
   letter-spacing: 0.04em;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg-top: #322f2d;
+    --bg-bottom: #252422;
+    --panel: rgba(37, 36, 34, 0.9);
+    --panel-strong: #312f2d;
+    --text: #f0ede8;
+    --muted: #b4ada4;
+    --accent: #2fb39b;
+    --accent-dark: #94dbce;
+    --accent-soft: rgba(47, 179, 155, 0.18);
+    --warn-soft: #5c4918;
+    --border: rgba(255, 255, 255, 0.08);
+    --shadow: 0 24px 64px rgba(0, 0, 0, 0.22);
+    --success: #74dba3;
+    --success-soft: #244032;
+    --error: #ff9a8c;
+    --error-soft: #4a2b27;
+  }
+
+  body {
+    background:
+      radial-gradient(circle at top left, rgba(240, 174, 51, 0.08), transparent 34%),
+      radial-gradient(circle at top right, rgba(47, 179, 155, 0.1), transparent 28%),
+      linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+  }
+
+  body::before {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.72), transparent 92%);
+  }
+
+  .main-panel {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .home-action-button,
+  .launch-card,
+  .deck-status-card,
+  .deck-input-panel,
+  textarea,
+  .set-name-input,
+  .tool-menu,
+  .menu-select,
+  .builder-textarea,
+  .recent-set-card,
+  .saved-set-item,
+  .faq-item,
+  .mode-picker-option,
+  .library-empty {
+    background: #3a3734;
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.14);
+  }
+
+  .home-action-button:hover,
+  .launch-card:hover,
+  .mode-picker-option:hover {
+    border-color: rgba(47, 179, 155, 0.32);
+    box-shadow: 0 18px 34px rgba(0, 0, 0, 0.18);
+  }
+
+  .guide-panel pre,
+  .history-bar-track {
+    background: #2a2927;
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .upload-strip-emphasis {
+    background: rgba(47, 179, 155, 0.12);
+    border-color: rgba(47, 179, 155, 0.22);
+  }
+
+  .paste-import-panel {
+    background: rgba(228, 111, 130, 0.12);
+    border-color: rgba(228, 111, 130, 0.24);
+  }
+
+  .button-secondary,
+  .timer-panel,
+  .study-settings-summary,
+  .modal-close-button {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: var(--text);
+  }
+
+  .button-ghost {
+    color: var(--accent-dark);
+    border-color: rgba(136, 215, 198, 0.26);
+  }
+
+  .study-settings-panel {
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18);
+  }
+
+  .toggle-slider {
+    background: rgba(255, 255, 255, 0.18);
+  }
+
+  .toggle-slider::after {
+    background: #f4f1eb;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+  }
+
+  .modal-overlay {
+    background: rgba(30, 29, 27, 0.52);
+  }
+
+  .modal-card {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .mode-picker-option-comprehensive {
+    background: linear-gradient(180deg, rgba(47, 179, 155, 0.18), rgba(47, 179, 155, 0.08));
+  }
+
+  .mode-picker-option-quick {
+    background: linear-gradient(180deg, rgba(245, 201, 74, 0.22), rgba(233, 169, 31, 0.12));
+  }
+
+  .back-button {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.09);
+    color: rgba(240, 237, 232, 0.76);
+  }
+
+  .back-button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.11);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .pill {
+    background: rgba(47, 179, 155, 0.18);
+    color: var(--accent-dark);
+  }
+
+  .pill-warn {
+    color: #ffd26f;
+  }
+
+  .pill-quick {
+    background: linear-gradient(135deg, rgba(245, 201, 74, 0.22), rgba(233, 169, 31, 0.18));
+    color: #ffe1a6;
+    border-color: rgba(245, 201, 74, 0.28);
+  }
+
+  .progress-track,
+  .progress-segment {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .option-button {
+    background: #44403d;
+    border-color: rgba(255, 255, 255, 0.09);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+  }
+
+  .option-button:hover:not(:disabled) {
+    background: #4d4845;
+    border-color: rgba(47, 179, 155, 0.32);
+    box-shadow: 0 16px 28px rgba(0, 0, 0, 0.16);
+  }
+
+  .option-button.correct {
+    border-color: rgba(105, 216, 157, 0.3);
+    color: #ccf6dc;
+  }
+
+  .option-button.incorrect {
+    border-color: rgba(255, 142, 128, 0.34);
+    color: #ffc7c0;
+  }
+
+  .history-grid-line {
+    stroke: rgba(255, 255, 255, 0.1);
+  }
+
+  .history-axis-line {
+    stroke: rgba(255, 255, 255, 0.16);
+  }
+
+  .history-point {
+    fill: #312f2d;
+    stroke: #f2bc3f;
+  }
 }

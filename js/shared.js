@@ -861,7 +861,7 @@ const RecallLoopStore = (() => {
           eyebrow: "Comprehensive",
           title: "Group mastery",
           copy:
-            "Work through groups of up to 20 cards. Each card stays active until you answer it correctly twice in a row.",
+            "Study the deck in three groups, with the slightly larger groups first. Each card stays active until you answer it correctly twice in a row.",
           className: "mode-picker-option mode-picker-option-comprehensive",
         },
         {
@@ -896,17 +896,7 @@ const RecallLoopStore = (() => {
         optionGrid.appendChild(button);
       });
 
-      const actions = document.createElement("div");
-      actions.className = "modal-actions";
-
-      const cancelButton = document.createElement("button");
-      cancelButton.type = "button";
-      cancelButton.className = "button button-ghost";
-      cancelButton.textContent = "Cancel";
-      cancelButton.addEventListener("click", () => close(null));
-      actions.appendChild(cancelButton);
-
-      card.append(closeButton, kicker, heading, copy, optionGrid, actions);
+      card.append(closeButton, kicker, heading, copy, optionGrid);
       overlay.appendChild(card);
       document.body.appendChild(overlay);
 
