@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Exametrics</title>
+    <meta name="theme-color" content="#0f7b6c" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="description"
+      content="A lightweight study app for building, importing, and studying multiple-choice decks."
+    />
+    <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <script src="js/shared.js" defer></script>
+    <script src="js/app.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero">
+        <p class="eyebrow">Fast exam prep</p>
+        <h1>Exametrics</h1>
+        <p class="hero-copy">
+          Build a set, bring one in, or jump back into a recent deck.
+          Study one card at a time, clear what you know, and recycle what you miss.
+        </p>
+      </header>
+
+      <main class="main-panel">
+        <section id="setup-view" class="view">
+          <div class="home-dashboard">
+            <div class="home-actions-grid" aria-label="Main navigation">
+              <a href="pages/library.html" class="home-action-button">Library</a>
+              <a href="pages/builder.html" class="home-action-button">New</a>
+              <a href="pages/ai-builder.html" class="home-action-button">AI Set Instructions</a>
+              <a href="pages/transfer.html" class="home-action-button">Import/Export</a>
+            </div>
+
+            <section class="editor-panel recent-panel">
+              <div class="section-heading section-heading-inline">
+                <h2>Recent Decks</h2>
+              </div>
+              <div id="recent-sets-list" class="recent-sets-list"></div>
+            </section>
+
+            <details class="tool-menu">
+              <summary>Storage Disclaimer</summary>
+
+              <div class="tool-menu-panel storage-panel">
+                <p class="menu-note">
+                  Your sets are saved in this browser on this device. They usually stay there until
+                  you delete them, clear browser data, or switch to a different browser, device, or website address.
+                </p>
+                <p class="menu-note">
+                  Even if someone uses the same Safari account on a MacBook and an iPhone, those
+                  devices still keep separate copies here. To move sets over, export them on one
+                  device and import them on the other.
+                </p>
+
+                <div class="faq-list">
+                  <div class="faq-item">
+                    <h3>Why do my sets not show up on my phone?</h3>
+                    <p class="guide-copy">
+                      This app saves sets locally inside each browser, so your phone keeps its own copy.
+                    </p>
+                  </div>
+                  <div class="faq-item">
+                    <h3>How do I move sets to another device or browser?</h3>
+                    <p class="guide-copy">
+                      Go to `Import/Export`, export the set as a file, then import that file on the other device or browser.
+                    </p>
+                  </div>
+                  <div class="faq-item">
+                    <h3>How long do sets stay saved?</h3>
+                    <p class="guide-copy">
+                      They usually stay there until you remove them, clear site data, or stop using that browser on that device.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </details>
+
+            <section class="legacy-store" hidden aria-hidden="true">
+              <button id="paste-toggle-button" type="button"></button>
+              <div id="deck-status-card">
+                <h3 id="deck-status-title"></h3>
+                <p id="deck-status-detail"></p>
+              </div>
+              <section id="paste-panel" hidden>
+                <button id="sample-button" type="button"></button>
+                <textarea id="deck-input" spellcheck="false"></textarea>
+              </section>
+              <input id="set-name-input" type="text" maxlength="80" />
+              <input id="file-input" type="file" accept=".txt,.md,text/plain" />
+              <button id="save-set-button" type="button"></button>
+              <button id="start-button" type="button"></button>
+              <button id="edit-builder-button" type="button"></button>
+              <details id="set-tools-menu"></details>
+              <button id="export-current-set-button" type="button"></button>
+              <input
+                id="import-set-input"
+                type="file"
+                accept=".json,.txt,.md,application/json,text/plain"
+              />
+              <p id="setup-message" aria-live="polite"></p>
+            </section>
+          </div>
+        </section>
+
+        <section id="study-view" class="view" hidden>
+          <div class="progress-panel">
+            <div class="progress-copy">
+              <span id="progress-label">0 / 0 mastered</span>
+              <span id="queue-label">0 cards still in circulation</span>
+            </div>
+            <div class="progress-track" aria-hidden="true">
+              <div id="progress-fill" class="progress-fill"></div>
+            </div>
+            <div class="progress-controls">
+              <div class="session-status">
+                <span id="session-badge" class="pill" hidden>Quick Learn</span>
+                <div id="timer-panel" class="timer-panel" hidden>
+                  <span class="timer-label">Time left</span>
+                  <span id="timer-value" class="timer-value">3:00</span>
+                </div>
+              </div>
+              <label class="toggle-field" for="auto-advance-toggle">
+                <span class="toggle-copy">
+                  <span class="toggle-label">Auto advance</span>
+                  <span id="auto-advance-status" class="toggle-help">
+                    Show feedback briefly, then move on
+                  </span>
+                </span>
+                <span class="toggle-switch">
+                  <input id="auto-advance-toggle" type="checkbox" />
+                  <span class="toggle-slider"></span>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <article id="study-card" class="study-card">
+            <div class="card-topline">
+              <button
+                id="back-button"
+                class="back-button"
+                type="button"
+                aria-label="Go back one question"
+                title="Go back one question"
+                hidden
+              >
+                ←
+              </button>
+              <span id="question-count" class="pill">Question 1</span>
+              <span id="retry-pill" class="pill pill-warn" hidden>Try this one again</span>
+            </div>
+
+            <p id="concept-label" class="concept-label" hidden></p>
+            <p id="prompt-kind-label" class="definition-label">Definition</p>
+            <h2 id="definition-text" class="definition-text"></h2>
+
+            <div id="options-grid" class="options-grid" role="group" aria-label="Answer options"></div>
+
+            <div class="feedback-row">
+              <p id="feedback-text" class="feedback-text" aria-live="polite"></p>
+              <button id="next-button" class="button button-primary" type="button" hidden>
+                Next
+              </button>
+            </div>
+          </article>
+        </section>
+
+        <section id="finish-view" class="view" hidden>
+          <div class="finish-card">
+            <p class="section-kicker">Session complete</p>
+            <h2 id="finish-title">All terms cleared.</h2>
+            <p id="finish-summary" class="finish-summary"></p>
+            <div class="finish-actions">
+              <button id="study-again-button" class="button button-primary" type="button">
+                Study Again
+              </button>
+              <button id="done-button" class="button button-ghost" type="button">
+                Done
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section id="history-panel" class="history-card" hidden>
+          <div class="history-header">
+            <div class="section-heading">
+              <p class="section-kicker">Recent performance</p>
+              <h2 id="history-title">Last 10 Learn sessions</h2>
+            </div>
+            <p id="history-summary" class="history-summary"></p>
+          </div>
+
+          <p id="history-empty" class="history-empty">
+            No study data yet. Finish a session and your score trend will appear here.
+          </p>
+          <div id="history-chart" class="history-chart" hidden></div>
+          <p id="history-note" class="history-note">
+            Score = correct answers divided by total answer attempts. The line runs oldest to newest, with time spent shown for Learn and time left shown for Quick Learn.
+          </p>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
